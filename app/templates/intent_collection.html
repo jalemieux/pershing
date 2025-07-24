@@ -1,0 +1,928 @@
+{% extends "base.html" %}
+
+{% block title %}Intent Collection - {{ user.email }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Intent Collection</h1>
+                <p class="mt-2 text-gray-600">Chat with our AI assistant to discover and refine your intentions</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Intent Input Form -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Intent Input</h3>
+                    <p class="mt-1 text-sm text-gray-500">Enter your request to analyze intent structure</p>
+                </div>
+                <div class="p-6">
+                    <form id="intentForm" class="space-y-6">
+                        <!-- User Input -->
+                        <div>
+                            <label for="userInput" class="block text-sm font-medium text-gray-700 mb-2">Your Request</label>
+                            <textarea 
+                                id="userInput" 
+                                name="userInput" 
+                                rows="6" 
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Enter your request here... (e.g., 'Book me a flight to New York for tomorrow morning, preferably before 10 AM')"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" onclick="clearForm()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                                </svg>
+                                Clear
+                            </button>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                                Analyze Intent
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Intent Display -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Latest Intent Analysis</h3>
+                    <p class="mt-1 text-sm text-gray-500">AI-inferred intent structure from your latest request</p>
+                </div>
+                <div class="p-6">
+                    <div id="intentsList" class="space-y-6">
+                        <!-- Initial state - no analysis performed yet -->
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No analysis yet</h3>
+                            <p class="mt-1 text-sm text-gray-500">Enter your request and click "Analyze Intent" to see the structured analysis.</p>
+                        </div>
+                        </div>
+
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No intents detected yet</h3>
+                            <p class="mt-1 text-sm text-gray-500">Start chatting to see structured intent analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form functionality
+document.getElementById('intentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const userInput = formData.get('userInput').trim();
+    
+    if (!userInput) {
+        alert('Please enter your request');
+        return;
+    }
+    
+    // Show loading state
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Analyzing...
+    `;
+    submitButton.disabled = true;
+    
+    // Send request to server
+    fetch('/intent-collection/analyze', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            userInput: userInput
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Server response:', data); // Debug log
+        if (data.success) {
+            // Add the server-generated intent to the list
+            // The server returns data.intent.intent structure
+            const intentData = data.intent.intent;
+            console.log('Intent data:', intentData); // Debug log
+            displayIntent(intentData);
+            
+            // Show success message
+            //alert('Intent analyzed successfully!');
+            
+            // Clear form
+            clearForm();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to analyze intent'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error: Failed to connect to server');
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    });
+});
+
+function generateStructuredIntent(formData) {
+    const timestamp = new Date().toISOString();
+    const intentId = 'intent_' + Math.random().toString(36).substr(2, 9);
+    const userInput = formData.userInput.toLowerCase();
+    
+    // Determine intent classification based on input
+    let classification = {
+        primary_intent: 'general_request',
+        domain: 'general',
+        category: 'information',
+        confidence: 0.85
+    };
+    
+    // Analyze user input for intent classification
+    if (userInput.includes('book') || userInput.includes('flight') || userInput.includes('hotel') || userInput.includes('reservation')) {
+        classification = {
+            primary_intent: 'book_travel',
+            domain: 'travel',
+            category: 'transaction',
+            confidence: 0.95
+        };
+    } else if (userInput.includes('buy') || userInput.includes('purchase') || userInput.includes('order') || userInput.includes('shop')) {
+        classification = {
+            primary_intent: 'purchase_item',
+            domain: 'ecommerce',
+            category: 'transaction',
+            confidence: 0.92
+        };
+    } else if (userInput.includes('help') || userInput.includes('support') || userInput.includes('issue') || userInput.includes('problem')) {
+        classification = {
+            primary_intent: 'get_support',
+            domain: 'customer_service',
+            category: 'support',
+            confidence: 0.88
+        };
+    }
+    
+    // Extract entities from user input
+    const entities = extractEntities(formData.userInput);
+    
+    // Generate slots based on intent type
+    const slots = generateSlots(classification, entities);
+    
+    // Generate context from form data
+    const context = {
+        user_preferences: {},
+        conversation_history: [],
+        session_data: {
+            user_location: 'unknown',
+            device_type: 'desktop'
+        }
+    };
+    
+    // Generate constraints
+    const constraints = [];
+    
+    // Generate fulfillment actions
+    const fulfillment = generateFulfillment(classification);
+    
+    return {
+        id: intentId,
+        timestamp: timestamp,
+        raw_message: formData.userInput,
+        classification: classification,
+        entities: entities,
+        slots: slots,
+        context: context,
+        constraints: constraints,
+        disambiguation: {
+            required: false,
+            alternatives: [],
+            clarification_needed: []
+        },
+        fulfillment: fulfillment,
+        metadata: {
+            language: 'en',
+            sentiment: analyzeSentiment(formData.userInput),
+            urgency: 'medium',
+            processing_time_ms: Math.floor(Math.random() * 200) + 50
+        }
+    };
+}
+
+function extractEntities(userInput) {
+    const entities = [];
+    const lowerInput = userInput.toLowerCase();
+    
+    // Extract locations
+    const locationPatterns = [
+        { pattern: /new york|nyc/i, value: 'New York', normalized: 'NYC' },
+        { pattern: /san francisco|sf/i, value: 'San Francisco', normalized: 'SFO' },
+        { pattern: /los angeles|la/i, value: 'Los Angeles', normalized: 'LAX' },
+        { pattern: /chicago/i, value: 'Chicago', normalized: 'CHI' }
+    ];
+    
+    for (const loc of locationPatterns) {
+        if (loc.pattern.test(userInput)) {
+            entities.push({
+                type: 'location',
+                value: loc.value,
+                normalized_value: loc.normalized,
+                confidence: 0.95
+            });
+            break;
+        }
+    }
+    
+    // Extract dates
+    const datePatterns = [
+        { pattern: /tomorrow/i, value: 'tomorrow', normalized: new Date(Date.now() + 86400000).toISOString().split('T')[0] },
+        { pattern: /next week/i, value: 'next week', normalized: 'future_week' },
+        { pattern: /today/i, value: 'today', normalized: new Date().toISOString().split('T')[0] }
+    ];
+    
+    for (const date of datePatterns) {
+        if (date.pattern.test(userInput)) {
+            entities.push({
+                type: 'date',
+                value: date.value,
+                normalized_value: date.normalized,
+                confidence: 0.92
+            });
+            break;
+        }
+    }
+    
+    // Extract times
+    if (/morning|am/i.test(userInput)) {
+        entities.push({
+            type: 'time',
+            value: 'morning',
+            normalized_value: 'AM',
+            confidence: 0.85
+        });
+    }
+    
+    return entities;
+}
+
+function generateSlots(classification, entities) {
+    const slots = {
+        required: {},
+        optional: {},
+        missing: []
+    };
+    
+    // Add entities as required slots
+    entities.forEach(entity => {
+        if (entity.type === 'location') {
+            slots.required.destination = entity.normalized_value;
+        } else if (entity.type === 'date') {
+            slots.required.date = entity.normalized_value;
+        } else if (entity.type === 'time') {
+            slots.optional.time = entity.normalized_value;
+        }
+    });
+    
+    // Add missing slots based on intent type
+    if (classification.primary_intent === 'book_travel') {
+        if (!slots.required.origin) {
+            slots.missing.push('origin_location');
+        }
+        if (!slots.required.date) {
+            slots.missing.push('travel_date');
+        }
+    }
+    
+    return slots;
+}
+
+function generateFulfillment(classification) {
+    const fulfillment = {
+        action_type: 'api_call',
+        service: 'general_service',
+        required_fields_complete: false,
+        next_steps: []
+    };
+    
+    switch (classification.primary_intent) {
+        case 'book_travel':
+            fulfillment.service = 'travel_booking_service';
+            fulfillment.next_steps = [
+                'request_origin_location',
+                'search_available_options',
+                'present_booking_options'
+            ];
+            break;
+        case 'purchase_item':
+            fulfillment.service = 'ecommerce_service';
+            fulfillment.next_steps = [
+                'search_products',
+                'filter_by_preferences',
+                'present_purchase_options'
+            ];
+            break;
+        case 'get_support':
+            fulfillment.service = 'customer_support_service';
+            fulfillment.next_steps = [
+                'route_to_appropriate_department',
+                'create_support_ticket',
+                'provide_initial_response'
+            ];
+            break;
+        default:
+            fulfillment.next_steps = [
+                'analyze_request',
+                'determine_best_action',
+                'provide_response'
+            ];
+    }
+    
+    return fulfillment;
+}
+
+function analyzeSentiment(text) {
+    const positiveWords = ['great', 'good', 'excellent', 'amazing', 'wonderful', 'love', 'like'];
+    const negativeWords = ['bad', 'terrible', 'awful', 'hate', 'dislike', 'problem', 'issue'];
+    
+    const lowerText = text.toLowerCase();
+    let positiveCount = 0;
+    let negativeCount = 0;
+    
+    positiveWords.forEach(word => {
+        if (lowerText.includes(word)) positiveCount++;
+    });
+    
+    negativeWords.forEach(word => {
+        if (lowerText.includes(word)) negativeCount++;
+    });
+    
+    if (positiveCount > negativeCount) return 'positive';
+    if (negativeCount > positiveCount) return 'negative';
+    return 'neutral';
+}
+
+function checkForIntentDiscovery(userMessage, botResponse) {
+    const lowerMessage = userMessage.toLowerCase();
+    const timestamp = new Date().toISOString();
+    const intentId = 'intent_' + Math.random().toString(36).substr(2, 9);
+    
+    // Simple intent detection based on keywords
+    if (lowerMessage.includes('learn python') || lowerMessage.includes('programming')) {
+        return {
+            id: intentId,
+            timestamp: timestamp,
+            raw_message: userMessage,
+            classification: {
+                primary_intent: 'learn_skill',
+                domain: 'education',
+                category: 'skill_development',
+                confidence: 0.88
+            },
+            entities: [
+                {
+                    type: 'skill',
+                    value: 'Python Programming',
+                    normalized_value: 'python',
+                    confidence: 0.95
+                },
+                {
+                    type: 'goal',
+                    value: 'build web applications',
+                    normalized_value: 'web_development',
+                    confidence: 0.82
+                }
+            ],
+            slots: {
+                required: {
+                    skill_to_learn: 'python',
+                    learning_goal: 'web_development'
+                },
+                optional: {
+                    timeline: 'flexible',
+                    difficulty_level: 'beginner'
+                },
+                missing: ['current_skill_level', 'preferred_learning_method']
+            },
+            context: {
+                user_preferences: {
+                    learning_style: 'practical',
+                    time_availability: 'flexible'
+                },
+                conversation_history: [],
+                session_data: {
+                    user_location: 'unknown',
+                    device_type: 'desktop'
+                }
+            },
+            constraints: [
+                {
+                    type: 'skill_level',
+                    condition: 'beginner_friendly'
+                }
+            ],
+            disambiguation: {
+                required: false,
+                alternatives: [],
+                clarification_needed: ['current_skill_level']
+            },
+            fulfillment: {
+                action_type: 'recommendation',
+                service: 'learning_path_service',
+                required_fields_complete: false,
+                next_steps: [
+                    'assess_current_skill_level',
+                    'recommend_learning_path',
+                    'suggest_resources'
+                ]
+            },
+            metadata: {
+                language: 'en',
+                sentiment: 'positive',
+                urgency: 'low',
+                processing_time_ms: 120
+            }
+        };
+    } else if (lowerMessage.includes('exercise') || lowerMessage.includes('workout')) {
+        return {
+            id: intentId,
+            timestamp: timestamp,
+            raw_message: userMessage,
+            classification: {
+                primary_intent: 'health_goal',
+                domain: 'fitness',
+                category: 'lifestyle',
+                confidence: 0.92
+            },
+            entities: [
+                {
+                    type: 'activity',
+                    value: 'exercise',
+                    normalized_value: 'workout',
+                    confidence: 0.95
+                },
+                {
+                    type: 'frequency',
+                    value: 'regular',
+                    normalized_value: 'consistent',
+                    confidence: 0.85
+                }
+            ],
+            slots: {
+                required: {
+                    activity_type: 'exercise',
+                    frequency: 'regular'
+                },
+                optional: {
+                    duration: '30_minutes',
+                    intensity: 'moderate'
+                },
+                missing: ['specific_exercise_type', 'schedule']
+            },
+            context: {
+                user_preferences: {
+                    fitness_level: 'unknown',
+                    available_time: 'flexible'
+                },
+                conversation_history: [],
+                session_data: {
+                    user_location: 'unknown',
+                    device_type: 'desktop'
+                }
+            },
+            constraints: [
+                {
+                    type: 'time',
+                    condition: 'regular_schedule'
+                }
+            ],
+            disambiguation: {
+                required: false,
+                alternatives: [],
+                clarification_needed: ['exercise_type', 'schedule']
+            },
+            fulfillment: {
+                action_type: 'planning',
+                service: 'fitness_planning_service',
+                required_fields_complete: false,
+                next_steps: [
+                    'assess_fitness_level',
+                    'recommend_exercise_routine',
+                    'create_schedule'
+                ]
+            },
+            metadata: {
+                language: 'en',
+                sentiment: 'positive',
+                urgency: 'medium',
+                processing_time_ms: 95
+            }
+        };
+    }
+    
+    return null;
+}
+
+function displayIntent(intentData) {
+    // Validate intentData structure
+    if (!intentData || !intentData.classification) {
+        console.error('Invalid intent data structure:', intentData);
+        alert('Error: Invalid intent data received from server');
+        return;
+    }
+    
+    const intentsList = document.getElementById('intentsList');
+    
+    // Clear all existing intent displays
+    intentsList.innerHTML = '';
+    
+    const confidencePercent = Math.round((intentData.classification.confidence || 0) * 100);
+    
+    const intentElement = document.createElement('div');
+    intentElement.className = 'bg-blue-50 border border-blue-200 rounded-lg p-4';
+    intentElement.innerHTML = `
+        <!-- Intent Header -->
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h4 class="text-lg font-medium text-gray-900">Intent Analysis</h4>
+                <div class="text-xs text-gray-500 mt-1">ID: ${intentData.id} • ${new Date(intentData.timestamp).toLocaleString()}</div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick="copyIntentToClipboard(${JSON.stringify(intentData).replace(/"/g, '&quot;')})">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Copy JSON
+                </button>
+                <button class="text-gray-400 hover:text-gray-600" onclick="this.parentElement.parentElement.parentElement.remove()">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Raw Message -->
+        <div class="mb-4 p-3 bg-gray-100 rounded-lg">
+            <h5 class="text-xs font-medium text-gray-700 mb-2">Raw Message</h5>
+            <p class="text-sm text-gray-900 italic">"${intentData.raw_message}"</p>
+        </div>
+
+        <!-- Classification -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>
+                </svg>
+                Classification
+            </h5>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div class="bg-white p-2 rounded border">
+                    <span class="font-medium text-gray-600">Primary Intent:</span>
+                    <div class="text-gray-900 font-semibold">${intentData.classification.primary_intent}</div>
+                </div>
+                <div class="bg-white p-2 rounded border">
+                    <span class="font-medium text-gray-600">Domain:</span>
+                    <div class="text-gray-900 font-semibold">${intentData.classification.domain}</div>
+                </div>
+                <div class="bg-white p-2 rounded border">
+                    <span class="font-medium text-gray-600">Category:</span>
+                    <div class="text-gray-900 font-semibold">${intentData.classification.category}</div>
+                </div>
+                <div class="bg-white p-2 rounded border">
+                    <span class="font-medium text-gray-600">Confidence:</span>
+                    <div class="text-green-600 font-semibold">${confidencePercent}%</div>
+                </div>
+            </div>
+        </div>
+
+                <!-- Entities -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                </svg>
+                Extracted Entities
+            </h5>
+            <div class="space-y-2">
+                ${intentData.entities && intentData.entities.length > 0 ? 
+                    intentData.entities.map(entity => `
+                        <div class="bg-white p-3 rounded border">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-medium text-gray-600">${entity.type.charAt(0).toUpperCase() + entity.type.slice(1)}</span>
+                                <span class="text-xs text-green-600 font-medium">${Math.round(entity.confidence * 100)}% confidence</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-900">${entity.value}</span>
+                                <span class="text-xs text-gray-500">Normalized: ${entity.normalized_value}</span>
+                            </div>
+                        </div>
+                    `).join('') : 
+                    '<div class="text-xs text-gray-500 italic">No entities detected</div>'
+                }
+            </div>
+        </div>
+
+        <!-- Slots -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>
+                </svg>
+                Slots
+            </h5>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <h6 class="text-xs font-medium text-gray-600 mb-2">Required</h6>
+                    <div class="space-y-2">
+                        ${intentData.slots.required && Object.keys(intentData.slots.required).length > 0 ? 
+                            Object.entries(intentData.slots.required).map(([key, value]) => `
+                                <div class="bg-green-50 p-2 rounded border border-green-200">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs text-gray-700">${key}</span>
+                                        <span class="text-xs text-green-600 font-medium">${value}</span>
+                                    </div>
+                                </div>
+                            `).join('') : 
+                            '<div class="text-xs text-gray-500 italic">No required slots</div>'
+                        }
+                    </div>
+                </div>
+                <div>
+                    <h6 class="text-xs font-medium text-gray-600 mb-2">Missing</h6>
+                    <div class="space-y-2">
+                        ${intentData.slots.missing && intentData.slots.missing.length > 0 ? 
+                            intentData.slots.missing.map(slot => `
+                                <div class="bg-red-50 p-2 rounded border border-red-200">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs text-gray-700">${slot}</span>
+                                        <span class="text-xs text-red-600 font-medium">Missing</span>
+                                    </div>
+                                </div>
+                            `).join('') : 
+                            '<div class="text-xs text-gray-500 italic">No missing slots</div>'
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Constraints
+            </h5>
+            <div class="space-y-2">
+                ${intentData.constraints && intentData.constraints.length > 0 ? 
+                    intentData.constraints.map(constraint => `
+                        <div class="bg-yellow-50 p-2 rounded border border-yellow-200">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-700">${constraint.type.charAt(0).toUpperCase() + constraint.type.slice(1)} Constraint</span>
+                                <span class="text-xs text-yellow-700 font-medium">${constraint.condition}</span>
+                            </div>
+                        </div>
+                    `).join('') : 
+                    '<div class="text-xs text-gray-500 italic">No constraints</div>'
+                }
+            </div>
+        </div>
+
+        <!-- Disambiguation -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                </svg>
+                Disambiguation
+            </h5>
+            <div class="bg-white p-3 rounded border">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-xs font-medium text-gray-600">Disambiguation Required:</span>
+                    <span class="text-xs ${intentData.disambiguation.needed ? 'text-orange-600' : 'text-green-600'} font-medium">${intentData.disambiguation.needed ? 'Yes' : 'No'}</span>
+                </div>
+                
+                ${intentData.disambiguation.needed ? `
+                    <div class="space-y-3">
+                        ${intentData.disambiguation.alternatives && intentData.disambiguation.alternatives.length > 0 ? `
+                            <div>
+                                <h6 class="text-xs font-medium text-gray-600 mb-2">Alternative Interpretations:</h6>
+                                <div class="space-y-1">
+                                    ${intentData.disambiguation.alternatives.map(alternative => `
+                                        <div class="bg-orange-50 p-2 rounded border border-orange-200">
+                                            <span class="text-xs text-gray-700">${alternative}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${intentData.disambiguation.clarification_needed && intentData.disambiguation.clarification_needed.length > 0 ? `
+                            <div>
+                                <h6 class="text-xs font-medium text-gray-600 mb-2">Clarification Needed:</h6>
+                                <div class="space-y-1">
+                                    ${intentData.disambiguation.clarification_needed.map(clarification => `
+                                        <div class="bg-blue-50 p-2 rounded border border-blue-200">
+                                            <span class="text-xs text-gray-700">${clarification}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : '<div class="text-xs text-gray-500 italic">No disambiguation required</div>'}
+            </div>
+        </div>
+
+        <!-- Fulfillment -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                </svg>
+                Fulfillment
+            </h5>
+            <div class="bg-white p-3 rounded border">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <span class="text-xs font-medium text-gray-600">Action Type:</span>
+                        <div class="text-sm text-gray-900">${intentData.fulfillment.action_type}</div>
+                    </div>
+                    <div>
+                        <span class="text-xs font-medium text-gray-600">Service:</span>
+                        <div class="text-sm text-gray-900">${intentData.fulfillment.service}</div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <span class="text-xs font-medium text-gray-600">Next Steps:</span>
+                    <div class="space-y-1 mt-1">
+                        ${intentData.fulfillment.next_steps && intentData.fulfillment.next_steps.length > 0 ? 
+                            intentData.fulfillment.next_steps.map(step => `
+                                <div class="flex items-center text-xs">
+                                    <svg class="w-3 h-3 mr-1 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                                    </svg>
+                                    ${step}
+                                </div>
+                            `).join('') : 
+                            '<div class="text-xs text-gray-500 italic">No next steps defined</div>'
+                        }
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-600">Required Fields Complete:</span>
+                    <span class="text-xs ${intentData.fulfillment.required_fields_complete ? 'text-green-600' : 'text-red-600'} font-medium">${intentData.fulfillment.required_fields_complete ? 'True' : 'False'}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="mb-4">
+            <h5 class="text-xs font-medium text-gray-700 mb-2 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>
+                </svg>
+                Metadata
+            </h5>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <div class="bg-white p-2 rounded border text-center">
+                    <div class="font-medium text-gray-600">Language</div>
+                    <div class="text-gray-900">${intentData.metadata.language}</div>
+                </div>
+                <div class="bg-white p-2 rounded border text-center">
+                    <div class="font-medium text-gray-600">Sentiment</div>
+                    <div class="text-gray-900">${intentData.metadata.sentiment}</div>
+                </div>
+                <div class="bg-white p-2 rounded border text-center">
+                    <div class="font-medium text-gray-600">Urgency</div>
+                    <div class="text-gray-900">${intentData.metadata.urgency}</div>
+                </div>
+                <div class="bg-white p-2 rounded border text-center">
+                    <div class="font-medium text-gray-600">Processing</div>
+                    <div class="text-gray-900">${intentData.metadata.processing_time_ms}ms</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    intentsList.appendChild(intentElement);
+}
+
+function getPriorityColor(priority) {
+    switch(priority) {
+        case 'high': return 'red';
+        case 'medium': return 'yellow';
+        case 'low': return 'green';
+        default: return 'blue';
+    }
+}
+
+function clearForm() {
+    document.getElementById('userInput').value = '';
+}
+
+function copyIntentToClipboard(intentData) {
+    try {
+        // Format the JSON with proper indentation
+        const jsonString = JSON.stringify(intentData, null, 2);
+        
+        // Use the modern clipboard API if available
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(jsonString).then(() => {
+                showCopySuccess();
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                fallbackCopyTextToClipboard(jsonString);
+            });
+        } else {
+            // Fallback for older browsers or non-secure contexts
+            fallbackCopyTextToClipboard(jsonString);
+        }
+    } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        alert('Failed to copy JSON to clipboard');
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // Avoid scrolling to bottom
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            alert('Failed to copy JSON to clipboard');
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        alert('Failed to copy JSON to clipboard');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Create a temporary success message
+    const successMessage = document.createElement('div');
+    successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50 transition-opacity duration-300';
+    successMessage.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            JSON copied to clipboard!
+        </div>
+    `;
+    
+    document.body.appendChild(successMessage);
+    
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+        successMessage.style.opacity = '0';
+        setTimeout(() => {
+            if (successMessage.parentNode) {
+                successMessage.parentNode.removeChild(successMessage);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %} 
