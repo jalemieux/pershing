@@ -40,19 +40,11 @@ def home():
 @admin_required
 def dashboard():
     # Get user's active sessions
-    active_sessions = UserSession.query.filter_by(
-        user_id=current_user.id
-    ).filter(
-        UserSession.expires_at > datetime.utcnow()
-    ).order_by(UserSession.created_at.desc()).all()
+    active_sessions = current_user.get_active_sessions()
     
-    # Get user statistics
-    total_sessions = UserSession.query.filter_by(user_id=current_user.id).count()
-    recent_sessions = UserSession.query.filter_by(
-        user_id=current_user.id
-    ).filter(
-        UserSession.created_at >= datetime.utcnow() - timedelta(days=7)
-    ).count()
+    # Get user statistics using the session manager
+    from app.session_manager import get_user_session_stats
+    session_stats = get_user_session_stats(current_user.id)
     
     # Get account age
     account_age = (datetime.utcnow() - current_user.created_at).days
@@ -60,8 +52,8 @@ def dashboard():
     dashboard_data = {
         'user': current_user,
         'active_sessions': active_sessions,
-        'total_sessions': total_sessions,
-        'recent_sessions': recent_sessions,
+        'total_sessions': session_stats['total_sessions'],
+        'recent_sessions': session_stats['recent_sessions'],
         'account_age': account_age
     }
     
@@ -114,61 +106,117 @@ def analyze_intent():
             'error': 'Internal server error during intent analysis'
         }), 500
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+@app.route('/prompt-crafting')
+@login_required
+def prompt_crafting():
+    return render_template('prompt_crafting.html', user=current_user)
+
+@app.route('/prompt-crafting/generate', methods=['POST'])
+@login_required
+def generate_prompts():
+    """
+    Generate prompts based on user input using multiple LLM providers.
+    """
+    try:
+        # Get the form data
+        data = request.get_json()
+        if not data:
+            # Fallback to form data if JSON is not available
+            user_input = request.form.get('userInput', '')
+        else:
+            user_input = data.get('userInput', '')
         
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        remember = request.form.get('remember', False) == 'on'
+        if not user_input:
+            return jsonify({
+                'success': False,
+                'error': 'No user input provided'
+            }), 400
         
-        user = User.query.filter_by(username=username).first()
+        # Generate prompts using the multi-provider prompt crafter
+        from app.prompt_crafter import get_multi_provider_prompt_crafter
+        prompts_crafter = get_multi_provider_prompt_crafter()
+        prompt_result = prompts_crafter.craft_prompts_multi_provider(user_input)
         
-        if user is None or not user.check_password(password):
-            flash('Invalid username or password')
-            return redirect(url_for('login'))
+        # Log the prompt generation request
+        app.logger.info(f"Multi-provider prompt generation requested for user {current_user.id}: {user_input[:100]}...")
         
-        login_user(user, remember=remember)
-        return redirect(url_for('home'))
+        return jsonify({
+            'success': True,
+            'prompt_result': prompt_result.to_dict(),
+            'message': 'Prompts generated successfully from multiple providers'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error generating prompts: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error during prompt generation'
+        }), 500
+
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('home'))
+        
+#     if request.method == 'POST':
+#         username = request.form.get('username')
+#         password = request.form.get('password')
+        
+#         user = User.query.filter_by(username=username).first()
+        
+#         if user is None or not user.check_password(password):
+#             flash('Invalid username or password')
+#             return redirect(url_for('login'))
+        
+#         # Create a UserSession for tracking (always persistent)
+#         device_info = request.headers.get('User-Agent', 'Unknown')
+#         user_session = UserSession(user.id, remember=True, device_info=device_info)
+#         db.session.add(user_session)
+        
+#         # Always use persistent sessions
+#         login_user(user, remember=True)
+#         db.session.commit()
+        
+#         return redirect(url_for('home'))
     
-    return render_template('login.html')
+#     return render_template('login.html')
 
 @app.route('/logout')
 @login_required
 def logout():
+    # Clean up any active sessions for this user (optional)
+    # You could add session cleanup logic here if needed
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('auth.initiate_auth'))
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('home'))
+# @app.route('/register', methods=['GET', 'POST'])
+# def register():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('home'))
         
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
+#     if request.method == 'POST':
+#         username = request.form.get('username')
+#         email = request.form.get('email')
+#         password = request.form.get('password')
         
-        if User.query.filter_by(username=username).first():
-            flash('Username already exists')
-            return redirect(url_for('register'))
+#         if User.query.filter_by(username=username).first():
+#             flash('Username already exists')
+#             return redirect(url_for('register'))
             
-        if User.query.filter_by(email=email).first():
-            flash('Email already exists')
-            return redirect(url_for('register'))
+#         if User.query.filter_by(email=email).first():
+#             flash('Email already exists')
+#             return redirect(url_for('register'))
         
-        user = User(username=username, email=email)
-        user.set_password(password)
+#         user = User(username=username, email=email)
+#         user.set_password(password)
         
-        db.session.add(user)
-        db.session.commit()
+#         db.session.add(user)
+#         db.session.commit()
         
-        flash('Registration successful! Please login.')
-        return redirect(url_for('login'))
+#         flash('Registration successful! Please login.')
+#         return redirect(url_for('login'))
     
-    return render_template('register.html')
+#     return render_template('register.html')
 
 # Sample routes
 @app.route('/users', methods=['GET'])

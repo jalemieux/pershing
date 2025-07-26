@@ -6,6 +6,7 @@ from app.logging import setup_logging
 from flask_login import LoginManager
 from flask_mail import Mail
 from app.intent_analyzer import create_intent_analyzer
+from app.prompt_crafter import create_multi_provider_prompt_crafter
 import os
 
 # Initialize extensions
@@ -41,6 +42,7 @@ def create_app(config_class=None):
 
     @login_manager.user_loader
     def load_user(user_id):
+        app.logger.info(f"Loading user {user_id}")
         from app.models import User
         return User.query.get(int(user_id))
 
@@ -63,6 +65,52 @@ def create_app(config_class=None):
     
     # Store intent analyzer in app context
     app.intent_analyzer = init_intent_analyzer()
+    
+    # Initialize Multi-Provider Prompt Crafter as singleton
+    def init_multi_provider_prompt_crafter():
+        """Initialize the multi-provider prompt crafter based on configuration."""
+        providers_config = {}
+        
+        # Add OpenAI provider if API key is available
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if openai_api_key:
+            providers_config['openai'] = {
+                'api_key': openai_api_key,
+                'model': os.getenv('OPENAI_MODEL', 'gpt-4o-2024-08-06')
+            }
+        
+        # Add Anthropic provider if API key is available
+        anthropic_api_key = os.getenv('ANTHROPIC_API_KEY')
+        if anthropic_api_key:
+            providers_config['anthropic'] = {
+                'api_key': anthropic_api_key,
+                'model': os.getenv('ANTHROPIC_MODEL', 'claude-3-sonnet-20240229')
+            }
+        
+        # If no API keys are available, use mock provider
+        if not providers_config:
+            providers_config['mock'] = {}
+        
+        return create_multi_provider_prompt_crafter(providers_config)
+    
+    # Store multi-provider prompt crafter in app context
+    app.multi_provider_prompt_crafter = init_multi_provider_prompt_crafter()
+    
+    # # Also keep the single provider prompt crafter for backward compatibility
+    # def init_prompt_crafter():
+    #     """Initialize the single provider prompt crafter based on configuration."""
+    #     provider_type = os.getenv('PROMPT_PROVIDER', 'mock')
+        
+    #     if provider_type == 'openai':
+    #         api_key = os.getenv('OPENAI_API_KEY')
+    #         model = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-08-06')
+    #         return create_prompt_crafter('openai', api_key=api_key, model=model)
+    #     else:
+    #         # Default to mock provider
+    #         return create_prompt_crafter('mock')
+    
+    # # Store prompt crafter in app context
+    # app.prompt_crafter = init_prompt_crafter()
     
     # Register blueprints
     from app.routes.auth import auth_bp

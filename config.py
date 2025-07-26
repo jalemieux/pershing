@@ -21,8 +21,7 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@yourdomain.com')
     
     # Session configuration
-    PERMANENT_SESSION_LIFETIME = timedelta(days=90)  # For "remember me" functionality
-    SESSION_COOKIE_SECURE = True  # Only send cookies over HTTPS
+    PERMANENT_SESSION_LIFETIME = timedelta(days=90)  # Always persistent sessions
     SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
     SESSION_COOKIE_SAMESITE = 'Lax'  # CSRF protection
     
@@ -34,7 +33,9 @@ class Config:
 class DevelopmentConfig(Config):
     """Development config."""
     DEBUG = True
-    SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False  # Allow cookies over HTTP in development
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
    
     
 
@@ -43,11 +44,15 @@ class TestingConfig(Config):
     TESTING = True
     DEBUG = True
     SESSION_COOKIE_SECURE = False
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
 class ProductionConfig(Config):
     """Production config."""
     DEBUG = False
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True  # Require HTTPS in production
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Strict'  # Stricter CSRF protection in production
 
 # Configuration dictionary
 config = {

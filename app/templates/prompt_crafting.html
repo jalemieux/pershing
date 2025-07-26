@@ -1,0 +1,610 @@
+{% extends "base.html" %}
+
+{% block title %}Prompt Crafting - {{ user.email }}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Prompt Crafting</h1>
+                <p class="mt-2 text-gray-600">Transform your ideas into effective prompts with AI assistance</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <!-- Prompt Input Form -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Prompt Input</h3>
+                    <p class="mt-1 text-sm text-gray-500">Enter your idea or request to generate effective prompts</p>
+                </div>
+                <div class="p-6">
+                    <form id="promptForm" class="space-y-6">
+                        <!-- User Input -->
+                        <div>
+                            <label for="userInput" class="block text-sm font-medium text-gray-700 mb-2">Your Idea or Request</label>
+                            <textarea 
+                                id="userInput" 
+                                name="userInput" 
+                                rows="6" 
+                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                placeholder="Enter your idea here... (e.g., 'I want to write a blog post about sustainable living')"
+                                required
+                            ></textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" onclick="clearForm()" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                                </svg>
+                                Clear
+                            </button>
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                                Generate Prompts
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Generated Prompts Display -->
+            <div class="bg-white rounded-lg shadow xl:col-span-2">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-medium text-gray-900">Generated Prompts</h3>
+                    <p class="mt-1 text-sm text-gray-500">AI-generated prompts with detailed analysis and metadata</p>
+                </div>
+                <div class="p-6">
+                    <div id="promptsList" class="space-y-6">
+                        <!-- Initial state - no prompts generated yet -->
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No prompts generated yet</h3>
+                            <p class="mt-1 text-sm text-gray-500">Enter your idea and click "Generate Prompts" to see AI-generated prompts with detailed analysis.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form functionality
+document.getElementById('promptForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const userInput = formData.get('userInput').trim();
+    
+    if (!userInput) {
+        alert('Please enter your idea or request');
+        return;
+    }
+    
+    // Show loading state
+    const submitButton = e.target.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    submitButton.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Generating...
+    `;
+    submitButton.disabled = true;
+    
+    // Send request to server
+    fetch('/prompt-crafting/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            userInput: userInput
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Server response:', data); // Debug log
+        if (data.success) {
+            // Display the generated prompts with full result data
+            displayPrompts(data.prompt_result);
+            
+            // Clear form
+            clearForm();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to generate prompts'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error: Failed to connect to server');
+    })
+    .finally(() => {
+        // Restore button state
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    });
+});
+
+function displayPrompts(promptResult) {
+    const promptsList = document.getElementById('promptsList');
+    
+    // Clear all existing prompt displays
+    promptsList.innerHTML = '';
+    
+    const result = promptResult.prompt_result;
+    const prompts = result.prompts;
+    const promptTypes = result.prompt_types;
+    const metadata = result.metadata;
+    const context = result.context;
+    const timestamp = result.timestamp;
+    const rawInput = result.raw_input;
+    const providerResults = result.provider_results || {};
+    
+    // Create result summary header
+    const summaryElement = document.createElement('div');
+    summaryElement.className = 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 mb-6';
+    summaryElement.innerHTML = `
+        <div class="flex justify-between items-start">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Generation Summary</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="font-medium text-gray-700">Generated:</span>
+                        <span class="text-gray-600 ml-2">${new Date(timestamp).toLocaleString()}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Total Prompts:</span>
+                        <span class="text-gray-600 ml-2">${prompts.length}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Providers Used:</span>
+                        <span class="text-gray-600 ml-2">${metadata.providers_used ? metadata.providers_used.join(', ') : 'Unknown'}</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-700">Successful Providers:</span>
+                        <span class="text-gray-600 ml-2">${metadata.successful_providers ? metadata.successful_providers.join(', ') : 'Unknown'}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-gray-500 mb-1">Total Processing Time</div>
+                <div class="text-lg font-semibold text-blue-600">${metadata.processing_time_ms || 0}ms</div>
+            </div>
+        </div>
+        
+        <!-- Original Input -->
+        <div class="mt-4 p-3 bg-white rounded border border-gray-200">
+            <div class="text-xs font-medium text-gray-700 mb-1">Original Input:</div>
+            <div class="text-sm text-gray-900">${rawInput}</div>
+        </div>
+    `;
+    promptsList.appendChild(summaryElement);
+    
+    // Display provider-specific results
+    if (providerResults && Object.keys(providerResults).length > 0) {
+        Object.entries(providerResults).forEach(([providerName, providerResult]) => {
+            const providerElement = document.createElement('div');
+            providerElement.className = 'bg-white border border-gray-200 rounded-lg p-6 mb-6 shadow-sm';
+            
+            const providerConfig = getProviderConfig(providerName);
+            const hasError = providerResult.error || providerResult.metadata?.error;
+            
+            providerElement.innerHTML = `
+                <!-- Provider Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full ${providerConfig.bgColor} flex items-center justify-center">
+                                <svg class="w-5 h-5 ${providerConfig.iconColor}" fill="currentColor" viewBox="0 0 20 20">
+                                    ${providerConfig.icon}
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900">${providerConfig.name}</h4>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${hasError ? 'bg-red-100 text-red-800' : providerConfig.badgeColor}">
+                                    ${hasError ? 'Error' : providerConfig.status}
+                                </span>
+                                <span class="text-xs text-gray-500">• ${providerResult.metadata?.model || 'Unknown Model'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs text-gray-500 mb-1">Processing Time</div>
+                        <div class="text-sm font-semibold text-gray-600">${providerResult.metadata?.processing_time_ms || 0}ms</div>
+                    </div>
+                </div>
+
+                ${hasError ? `
+                    <!-- Error State -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            </svg>
+                            <span class="text-sm font-medium text-red-800">Provider Error</span>
+                        </div>
+                        <p class="text-sm text-red-700 mt-1">${providerResult.error || 'Unknown error occurred'}</p>
+                    </div>
+                ` : `
+                    <!-- Provider Prompts -->
+                    <div class="space-y-4">
+                        ${providerResult.prompts ? providerResult.prompts.map((prompt, index) => {
+                            const promptType = providerResult.prompt_types ? providerResult.prompt_types[index] : 'unknown';
+                            const typeConfig = getPromptTypeConfig(promptType);
+                            
+                            return `
+                                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${typeConfig.badgeColor}">
+                                                ${typeConfig.label}
+                                            </span>
+                                            <span class="text-xs text-gray-500">• ${promptType.replace(/_/g, ' ')}</span>
+                                        </div>
+                                        <button class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick="copyPromptToClipboard(this, '${providerName}_${index}')">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Copy
+                                        </button>
+                                    </div>
+                                    <div class="bg-white p-3 rounded border border-gray-200">
+                                        <p class="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">${prompt}</p>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs text-gray-500 mt-2">
+                                        <span>Length: ${prompt.length} characters</span>
+                                        <span>Words: ${prompt.split(' ').length}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('') : '<p class="text-sm text-gray-500">No prompts generated</p>'}
+                    </div>
+                `}
+            `;
+            
+            promptsList.appendChild(providerElement);
+        });
+    } else {
+        // Fallback to displaying all prompts together (for backward compatibility)
+        prompts.forEach((prompt, index) => {
+            const promptType = promptTypes[index] || 'unknown';
+            const promptElement = document.createElement('div');
+            promptElement.className = 'bg-white border border-gray-200 rounded-lg p-6 mb-4 shadow-sm';
+            
+            // Get type-specific styling
+            const typeConfig = getPromptTypeConfig(promptType);
+            
+            promptElement.innerHTML = `
+                <!-- Prompt Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 rounded-full ${typeConfig.bgColor} flex items-center justify-center">
+                                <svg class="w-4 h-4 ${typeConfig.iconColor}" fill="currentColor" viewBox="0 0 20 20">
+                                    ${typeConfig.icon}
+                                </svg>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-medium text-gray-900">Prompt ${index + 1}</h4>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeConfig.badgeColor}">
+                                    ${typeConfig.label}
+                                </span>
+                                <span class="text-xs text-gray-500">• ${promptType.replace(/_/g, ' ')}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" onclick="copyPromptToClipboard(this, ${index})">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                            Copy
+                        </button>
+                        <button class="text-gray-400 hover:text-gray-600" onclick="this.closest('.bg-white').remove()">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Prompt Content -->
+                <div class="mb-4">
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <p class="text-sm text-gray-900 leading-relaxed whitespace-pre-wrap">${prompt}</p>
+                    </div>
+                </div>
+
+                <!-- Prompt Details -->
+                <div class="flex justify-between items-center text-xs text-gray-500">
+                    <div class="flex items-center space-x-4">
+                        <span>Length: ${prompt.length} characters</span>
+                        <span>Words: ${prompt.split(' ').length}</span>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        ID: ${result.id || 'N/A'}
+                    </div>
+                </div>
+            `;
+            
+            promptsList.appendChild(promptElement);
+        });
+    }
+    
+    // Add context information if available
+    if (context && Object.keys(context).length > 0) {
+        const contextElement = document.createElement('div');
+        contextElement.className = 'bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4';
+        contextElement.innerHTML = `
+            <div class="flex items-center mb-2">
+                <svg class="w-4 h-4 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                </svg>
+                <h4 class="text-sm font-medium text-yellow-800">Context Information</h4>
+            </div>
+            <div class="text-xs text-yellow-700">
+                <pre class="whitespace-pre-wrap">${JSON.stringify(context, null, 2)}</pre>
+            </div>
+        `;
+        promptsList.appendChild(contextElement);
+    }
+    
+    // Add export button
+    const exportElement = document.createElement('div');
+    exportElement.className = 'bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4';
+    exportElement.innerHTML = `
+        <div class="flex justify-between items-center">
+            <div>
+                <h4 class="text-sm font-medium text-gray-900">Export Results</h4>
+                <p class="text-xs text-gray-500 mt-1">Download the complete prompt generation data as JSON</p>
+            </div>
+            <button onclick="exportPromptResult()" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                </svg>
+                Export JSON
+            </button>
+        </div>
+    `;
+    promptsList.appendChild(exportElement);
+    
+    // Store the full result for export
+    window.currentPromptResult = promptResult;
+    // Store prompts globally for copy functionality
+    window.currentPrompts = prompts;
+    // Store provider results for copy functionality
+    window.currentProviderResults = providerResults;
+}
+
+function getPromptTypeConfig(type) {
+    const configs = {
+        'direct_specific': {
+            label: 'Direct & Specific',
+            bgColor: 'bg-blue-100',
+            iconColor: 'text-blue-600',
+            badgeColor: 'bg-blue-100 text-blue-800',
+            icon: '<path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>'
+        },
+        'creative_exploratory': {
+            label: 'Creative & Exploratory',
+            bgColor: 'bg-purple-100',
+            iconColor: 'text-purple-600',
+            badgeColor: 'bg-purple-100 text-purple-800',
+            icon: '<path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>'
+        },
+        'structured_systematic': {
+            label: 'Structured & Systematic',
+            bgColor: 'bg-green-100',
+            iconColor: 'text-green-600',
+            badgeColor: 'bg-green-100 text-green-800',
+            icon: '<path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z" clip-rule="evenodd"/>'
+        }
+    };
+    
+    return configs[type] || {
+        label: 'AI Generated',
+        bgColor: 'bg-gray-100',
+        iconColor: 'text-gray-600',
+        badgeColor: 'bg-gray-100 text-gray-800',
+        icon: '<path fill-rule="evenodd" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" clip-rule="evenodd"/>'
+    };
+}
+
+function getProviderConfig(providerName) {
+    const configs = {
+        'openai': {
+            name: 'OpenAI GPT',
+            status: 'Active',
+            bgColor: 'bg-green-100',
+            iconColor: 'text-green-600',
+            badgeColor: 'bg-green-100 text-green-800',
+            icon: '<path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"/>'
+        },
+        'anthropic': {
+            name: 'Anthropic Claude',
+            status: 'Active',
+            bgColor: 'bg-purple-100',
+            iconColor: 'text-purple-600',
+            badgeColor: 'bg-purple-100 text-purple-800',
+            icon: '<path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>'
+        },
+        'mock': {
+            name: 'Mock Provider',
+            status: 'Development',
+            bgColor: 'bg-gray-100',
+            iconColor: 'text-gray-600',
+            badgeColor: 'bg-gray-100 text-gray-800',
+            icon: '<path fill-rule="evenodd" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" clip-rule="evenodd"/>'
+        }
+    };
+    
+    return configs[providerName] || {
+        name: providerName.charAt(0).toUpperCase() + providerName.slice(1),
+        status: 'Unknown',
+        bgColor: 'bg-gray-100',
+        iconColor: 'text-gray-600',
+        badgeColor: 'bg-gray-100 text-gray-800',
+        icon: '<path fill-rule="evenodd" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" clip-rule="evenodd"/>'
+    };
+}
+
+function clearForm() {
+    document.getElementById('userInput').value = '';
+}
+
+function copyPromptToClipboard(button, identifier) {
+    let promptText = '';
+    
+    // Check if this is a provider-specific prompt or a legacy prompt
+    if (typeof identifier === 'string' && identifier.includes('_')) {
+        // Provider-specific prompt (e.g., "openai_0", "anthropic_1")
+        const [providerName, indexStr] = identifier.split('_');
+        const index = parseInt(indexStr);
+        
+        if (window.currentProviderResults && window.currentProviderResults[providerName]) {
+            const providerResult = window.currentProviderResults[providerName];
+            if (providerResult.prompts && providerResult.prompts[index]) {
+                promptText = providerResult.prompts[index];
+            }
+        }
+    } else {
+        // Legacy single prompt
+        const index = parseInt(identifier);
+        if (window.currentPrompts && window.currentPrompts[index]) {
+            promptText = window.currentPrompts[index];
+        }
+    }
+    
+    if (!promptText) {
+        alert('No prompt available to copy');
+        return;
+    }
+    
+    try {
+        // Use the modern clipboard API if available
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(promptText).then(() => {
+                showCopySuccess();
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                fallbackCopyTextToClipboard(promptText);
+            });
+        } else {
+            // Fallback for older browsers or non-secure contexts
+            fallbackCopyTextToClipboard(promptText);
+        }
+    } catch (error) {
+        console.error('Error copying to clipboard:', error);
+        alert('Failed to copy prompt to clipboard');
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // Avoid scrolling to bottom
+    textArea.style.top = '0';
+    textArea.style.left = '0';
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            alert('Failed to copy prompt to clipboard');
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        alert('Failed to copy prompt to clipboard');
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Create a temporary success message
+    const successMessage = document.createElement('div');
+    successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg z-50 transition-opacity duration-300';
+    successMessage.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            Prompt copied to clipboard!
+        </div>
+    `;
+    
+    document.body.appendChild(successMessage);
+    
+    // Remove the message after 3 seconds
+    setTimeout(() => {
+        successMessage.style.opacity = '0';
+        setTimeout(() => {
+            if (successMessage.parentNode) {
+                successMessage.parentNode.removeChild(successMessage);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function exportPromptResult() {
+    if (!window.currentPromptResult) {
+        alert('No prompt result available to export');
+        return;
+    }
+    
+    const dataStr = JSON.stringify(window.currentPromptResult, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(dataBlob);
+    link.download = `prompt_result_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+    link.click();
+    
+    // Show success message
+    const successMessage = document.createElement('div');
+    successMessage.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-md shadow-lg z-50 transition-opacity duration-300';
+    successMessage.innerHTML = `
+        <div class="flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+            </svg>
+            JSON exported successfully!
+        </div>
+    `;
+    
+    document.body.appendChild(successMessage);
+    
+    setTimeout(() => {
+        successMessage.style.opacity = '0';
+        setTimeout(() => {
+            if (successMessage.parentNode) {
+                successMessage.parentNode.removeChild(successMessage);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %} 

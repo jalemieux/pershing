@@ -6,47 +6,44 @@ DROP TABLE IF EXISTS user_session;
 DROP TABLE IF EXISTS verification_code;
 DROP TABLE IF EXISTS user;
 
--- Create user table
-CREATE TABLE user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
     username VARCHAR(80) UNIQUE,
     email VARCHAR(120) UNIQUE NOT NULL,
     password_hash VARCHAR(128),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     is_active BOOLEAN DEFAULT TRUE,
     is_admin BOOLEAN DEFAULT FALSE
 );
 
--- Create verification_code table
-CREATE TABLE verification_code (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+-- Create verification_codes table
+CREATE TABLE IF NOT EXISTS verification_codes (
+    id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     code_hash VARCHAR(255) NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    expires_at DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
     attempts INTEGER DEFAULT 0,
     used BOOLEAN DEFAULT FALSE
 );
 
--- Create user_session table
-CREATE TABLE user_session (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
+-- Create user_sessions table
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     session_token VARCHAR(255) UNIQUE NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    expires_at DATETIME,
-    device_info TEXT,
-    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    device_info TEXT
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_user_email ON user(email);
-CREATE INDEX idx_user_username ON user(username);
-CREATE INDEX idx_verification_code_email ON verification_code(email);
-CREATE INDEX idx_verification_code_expires ON verification_code(expires_at);
-CREATE INDEX idx_user_session_user_id ON user_session(user_id);
-CREATE INDEX idx_user_session_token ON user_session(session_token);
-CREATE INDEX idx_user_session_expires ON user_session(expires_at);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_email ON verification_codes(email);
+CREATE INDEX IF NOT EXISTS idx_verification_codes_expires ON verification_codes(expires_at);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user_id ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_token ON user_sessions(session_token);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at);
 
 -- Insert a default admin user (password: admin123)
 -- You should change this password in production

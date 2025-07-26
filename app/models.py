@@ -27,6 +27,30 @@ class User(db.Model, UserMixin):
             'created_at': self.created_at.isoformat(),
             'is_admin': self.is_admin
         }
+    
+    def get_active_sessions(self):
+        """Get all active sessions for this user."""
+        return UserSession.query.filter_by(
+            user_id=self.id
+        ).filter(
+            UserSession.expires_at > datetime.utcnow()
+        ).order_by(UserSession.created_at.desc()).all()
+    
+    def cleanup_expired_sessions(self):
+        """Remove expired sessions for this user."""
+        expired_sessions = UserSession.query.filter_by(
+            user_id=self.id
+        ).filter(
+            UserSession.expires_at <= datetime.utcnow()
+        ).all()
+        
+        for session in expired_sessions:
+            db.session.delete(session)
+        
+        if expired_sessions:
+            db.session.commit()
+        
+        return len(expired_sessions)
 
 class VerificationCode(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -61,12 +85,27 @@ class UserSession(db.Model):
     expires_at = db.Column(db.DateTime)
     device_info = db.Column(db.Text)
     
-    def __init__(self, user_id, remember=False, device_info=None):
+    def __init__(self, user_id, remember=True, device_info=None):
         self.user_id = user_id
         self.session_token = secrets.token_urlsafe(32)
         self.device_info = device_info
-        days = 90 if remember else 30
-        self.expires_at = datetime.utcnow() + timedelta(days=days)
+        # Always use 90 days since remember is always True
+        self.expires_at = datetime.utcnow() + timedelta(days=90)
     
     def is_valid(self):
-        return datetime.utcnow() <= self.expires_at 
+        return datetime.utcnow() <= self.expires_at
+    
+    @classmethod
+    def cleanup_all_expired(cls):
+        """Remove all expired sessions from the database."""
+        expired_sessions = cls.query.filter(
+            cls.expires_at <= datetime.utcnow()
+        ).all()
+        
+        for session in expired_sessions:
+            db.session.delete(session)
+        
+        if expired_sessions:
+            db.session.commit()
+        
+        return len(expired_sessions) 
