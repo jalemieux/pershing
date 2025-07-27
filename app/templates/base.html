@@ -40,6 +40,9 @@
                     <a href="{{ url_for('prompt_crafting') }}" class="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200">
                         Prompt Crafting
                     </a>
+                    <a href="{{ url_for('chat') }}" class="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200">
+                        Chat
+                    </a>
                     {% if current_user.is_admin %}
                     <a href="{{ url_for('dashboard') }}" class="text-gray-500 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors duration-200">
                         Dashboard
@@ -91,6 +94,9 @@
                     </a>
                     <a href="{{ url_for('prompt_crafting') }}" class="text-gray-500 hover:text-gray-900 block px-3 py-2 text-base font-medium">
                         Prompt Crafting
+                    </a>
+                    <a href="{{ url_for('chat') }}" class="text-gray-500 hover:text-gray-900 block px-3 py-2 text-base font-medium">
+                        Chat
                     </a>
                     {% if current_user.is_admin %}
                     <a href="{{ url_for('dashboard') }}" class="text-gray-500 hover:text-gray-900 block px-3 py-2 text-base font-medium">

@@ -284,6 +284,12 @@ def view_saved_prompt(prompt_id):
         flash('Error loading prompt', 'error')
         return redirect(url_for('prompt_crafting'))
 
+@app.route('/chat')
+@login_required
+def chat():
+    """Chat interface page."""
+    return render_template('chat.html', user=current_user)
+
 @app.route('/prompt-crafting/saved/<int:prompt_id>', methods=['DELETE'])
 @login_required
 def delete_saved_prompt(prompt_id):

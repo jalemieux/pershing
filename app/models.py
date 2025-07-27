@@ -139,3 +139,86 @@ class UserSession(db.Model):
             db.session.commit()
         
         return len(expired_sessions) 
+
+class Conversation(db.Model):
+    """Model for storing chat conversations."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False, default='New Conversation')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    conversation_type = db.Column(db.String(50), default='text')  # text, image, multimodal
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('conversations', lazy=True))
+    messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        """Convert conversation to dictionary."""
+        return {
+            'id': self.id,
+            'title': self.title,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'is_active': self.is_active,
+            'conversation_type': self.conversation_type,
+            'message_count': len(self.messages)
+        }
+    
+    def get_last_message(self):
+        """Get the most recent message in this conversation."""
+        return Message.query.filter_by(conversation_id=self.id).order_by(Message.created_at.desc()).first()
+    
+    def update_title_from_messages(self):
+        """Update conversation title based on first few messages."""
+        first_messages = Message.query.filter_by(conversation_id=self.id).order_by(Message.created_at.asc()).limit(3).all()
+        if first_messages:
+            # Create title from first user message
+            for msg in first_messages:
+                if msg.role == 'user':
+                    title = msg.content[:50]
+                    if len(msg.content) > 50:
+                        title += '...'
+                    self.title = title
+                    break
+
+class Message(db.Model):
+    """Model for storing individual chat messages."""
+    id = db.Column(db.Integer, primary_key=True)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('conversation.id'), nullable=False)
+    role = db.Column(db.String(20), nullable=False)  # user, assistant, system
+    content = db.Column(db.Text, nullable=False)
+    content_type = db.Column(db.String(20), default='text')  # text, image, file
+    file_path = db.Column(db.String(500), nullable=True)  # For uploaded files
+    file_name = db.Column(db.String(255), nullable=True)
+    file_size = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    tokens_used = db.Column(db.Integer, nullable=True)
+    model_used = db.Column(db.String(100), nullable=True)
+    provider_used = db.Column(db.String(100), nullable=True)
+    response_time = db.Column(db.Float, nullable=True)  # Response time in seconds
+    message_metadata = db.Column(db.Text, nullable=True)  # JSON string for additional data
+    
+    def to_dict(self):
+        """Convert message to dictionary."""
+        return {
+            'id': self.id,
+            'conversation_id': self.conversation_id,
+            'role': self.role,
+            'content': self.content,
+            'content_type': self.content_type,
+            'file_path': self.file_path,
+            'file_name': self.file_name,
+            'file_size': self.file_size,
+            'created_at': self.created_at.isoformat(),
+            'tokens_used': self.tokens_used,
+            'model_used': self.model_used,
+            'provider_used': self.provider_used,
+            'response_time': self.response_time,
+            'metadata': self.message_metadata
+        }
+    
+    def is_file_message(self):
+        """Check if this message contains a file."""
+        return self.content_type in ['image', 'file'] and self.file_path is not None 
