@@ -7,36 +7,56 @@ DROP TABLE IF EXISTS verification_code;
 DROP TABLE IF EXISTS user;
 
 -- Create users table
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS user (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(80) UNIQUE,
     email VARCHAR(120) UNIQUE NOT NULL,
     password_hash VARCHAR(128),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT TRUE,
-    is_admin BOOLEAN DEFAULT FALSE
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT 1,
+    is_admin BOOLEAN DEFAULT 0
 );
 
 -- Create verification_codes table
-CREATE TABLE IF NOT EXISTS verification_codes (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS verification_code (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     email VARCHAR(255) NOT NULL,
     code_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME,
     attempts INTEGER DEFAULT 0,
-    used BOOLEAN DEFAULT FALSE
+    used BOOLEAN DEFAULT 0
 );
 
 -- Create user_sessions table
-CREATE TABLE IF NOT EXISTS user_sessions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS user_session (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
     session_token VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP NOT NULL,
-    device_info TEXT
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME,
+    device_info TEXT,
+    FOREIGN KEY (user_id) REFERENCES user (id)
 );
+
+-- Create saved_prompts table for PostgreSQL
+CREATE TABLE IF NOT EXISTS saved_prompt (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    original_message TEXT NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    prompt_content TEXT NOT NULL,
+    prompt_type VARCHAR(100),
+    provider VARCHAR(100),
+    prompt_metadata TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "user" (id)
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_saved_prompt_user_id ON saved_prompt(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_prompt_created_at ON saved_prompt(created_at); 
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_verification_codes_email ON verification_codes(email);

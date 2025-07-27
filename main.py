@@ -6,6 +6,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from datetime import datetime, timedelta
 import json
 from functools import wraps
+from app.models import SavedPrompt
 
 app = create_app()
 
@@ -151,6 +152,168 @@ def generate_prompts():
         return jsonify({
             'success': False,
             'error': 'Internal server error during prompt generation'
+        }), 500
+
+@app.route('/prompt-crafting/save', methods=['POST'])
+@login_required
+def save_prompt():
+    """
+    Save a generated prompt to the database.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        # Extract data from the request
+        original_message = data.get('original_message', '')
+        prompt_content = data.get('prompt_content', '')
+        prompt_name = data.get('prompt_name', 'Generated Prompt')  # Get prompt name
+        model = data.get('model', 'Unknown')
+        prompt_type = data.get('prompt_type', '')
+        provider = data.get('provider', '')
+        prompt_metadata = data.get('metadata', '')
+        
+        if not original_message or not prompt_content:
+            return jsonify({
+                'success': False,
+                'error': 'Original message and prompt content are required'
+            }), 400
+        
+        # Generate a name based on the prompt name and model, or use the provided name
+        name = prompt_name if prompt_name and prompt_name != 'Generated Prompt' else f"{original_message[:50]}{'...' if len(original_message) > 50 else ''} - {model}"
+        
+        # Create the saved prompt
+        saved_prompt = SavedPrompt(
+            user_id=current_user.id,
+            name=name,
+            original_message=original_message,
+            model=model,
+            prompt_content=prompt_content,
+            prompt_type=prompt_type,
+            provider=provider,
+            prompt_metadata=prompt_metadata
+        )
+        
+        db.session.add(saved_prompt)
+        db.session.commit()
+        
+        app.logger.info(f"Prompt saved for user {current_user.id}: {name}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Prompt saved successfully',
+            'saved_prompt': saved_prompt.to_dict()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error saving prompt: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error while saving prompt'
+        }), 500
+
+@app.route('/prompt-crafting/saved', methods=['GET'])
+@login_required
+def get_saved_prompts():
+    """
+    Get all saved prompts for the current user.
+    """
+    try:
+        saved_prompts = SavedPrompt.query.filter_by(user_id=current_user.id).order_by(SavedPrompt.created_at.desc()).all()
+        
+        return jsonify({
+            'success': True,
+            'saved_prompts': [prompt.to_dict() for prompt in saved_prompts]
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error retrieving saved prompts: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error while retrieving saved prompts'
+        }), 500
+
+@app.route('/prompt-crafting/saved/<int:prompt_id>', methods=['GET'])
+@login_required
+def get_saved_prompt(prompt_id):
+    """
+    Get a specific saved prompt by ID.
+    """
+    try:
+        saved_prompt = SavedPrompt.query.filter_by(id=prompt_id, user_id=current_user.id).first()
+        
+        if not saved_prompt:
+            return jsonify({
+                'success': False,
+                'error': 'Prompt not found'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'saved_prompt': saved_prompt.to_dict()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error retrieving saved prompt: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error while retrieving saved prompt'
+        }), 500
+
+@app.route('/prompt-crafting/saved/<int:prompt_id>/view')
+@login_required
+def view_saved_prompt(prompt_id):
+    """
+    View a specific saved prompt in a dedicated page.
+    """
+    try:
+        saved_prompt = SavedPrompt.query.filter_by(id=prompt_id, user_id=current_user.id).first()
+        
+        if not saved_prompt:
+            flash('Prompt not found', 'error')
+            return redirect(url_for('prompt_crafting'))
+        
+        return render_template('saved_prompt_view.html', user=current_user, saved_prompt=saved_prompt)
+        
+    except Exception as e:
+        app.logger.error(f"Error viewing saved prompt: {str(e)}")
+        flash('Error loading prompt', 'error')
+        return redirect(url_for('prompt_crafting'))
+
+@app.route('/prompt-crafting/saved/<int:prompt_id>', methods=['DELETE'])
+@login_required
+def delete_saved_prompt(prompt_id):
+    """
+    Delete a saved prompt by ID.
+    """
+    try:
+        saved_prompt = SavedPrompt.query.filter_by(id=prompt_id, user_id=current_user.id).first()
+        
+        if not saved_prompt:
+            return jsonify({
+                'success': False,
+                'error': 'Prompt not found'
+            }), 404
+        
+        db.session.delete(saved_prompt)
+        db.session.commit()
+        
+        app.logger.info(f"Prompt deleted for user {current_user.id}: {saved_prompt.name}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Prompt deleted successfully'
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error deleting saved prompt: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Internal server error while deleting saved prompt'
         }), 500
 
 # @app.route('/login', methods=['GET', 'POST'])

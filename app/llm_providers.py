@@ -88,6 +88,7 @@ class PromptMetadata(BaseModel):
 
 class PromptGenerationResult(BaseModel):
     """Complete prompt generation result using structured output."""
+    name: str = Field(description="A descriptive name for the generated prompt")
     role_context: str = Field(description="Role or context for the AI to take")
     task: str = Field(description="Clear statement of what needs to be done")
     requirements: List[str] = Field(description="Specific criteria or constraints")
@@ -322,6 +323,7 @@ class OpenAIPromptProvider:
         # Convert to dictionary format expected by PromptResult
         result_dict = {
             "prompts": [complete_prompt],
+            "prompt_names": [result.name],
             "prompt_types": ["structured_complete"],
             "metadata": result.metadata.model_dump(mode="json"),
             "context": context or {}
@@ -352,6 +354,7 @@ Include any constraints or requirements
 
 Structure your prompt like this:
 
+Name: A descriptive, concise name for this prompt (max 50 characters)
 Role/Context: Define what role the AI should take
 Task: Clearly state what needs to be done
 Requirements: List specific criteria or constraints
@@ -360,18 +363,22 @@ Examples (if needed): Show what good output looks like
 """    
     def _build_prompt(self, user_input: str, context: Optional[Dict[str, Any]] = None) -> str:
         """Build the user prompt for the LLM."""
-        prompt = f"""Please write a prompt for: "{user_input}"""
+        prompt = f"""Please write a prompt for: "{user_input}"
+
+Generate a descriptive name for this prompt that captures its purpose and scope."""
         return prompt
     
     def _build_complete_prompt(self, result: PromptGenerationResult) -> str:
         """Convert structured PromptGenerationResult into a complete prompt string."""
         prompt_parts = []
         
-        # Add role context
-        prompt_parts.append(f"Role/Context: {result.role_context}")
+        # Add role/context
+        if result.role_context:
+            prompt_parts.append(f"Role/Context: {result.role_context}")
         
         # Add task
-        prompt_parts.append(f"Task: {result.task}")
+        if result.task:
+            prompt_parts.append(f"Task: {result.task}")
         
         # Add requirements
         if result.requirements:
@@ -379,16 +386,15 @@ Examples (if needed): Show what good output looks like
             prompt_parts.append(f"Requirements:\n{requirements_text}")
         
         # Add format
-        prompt_parts.append(f"Format: {result.format}")
+        if result.format:
+            prompt_parts.append(f"Format: {result.format}")
         
-        # Add examples if provided
+        # Add examples
         if result.examples:
             examples_text = "\n".join([f"- {example}" for example in result.examples])
             prompt_parts.append(f"Examples:\n{examples_text}")
         
-        # Combine all parts
-        complete_prompt = "\n\n".join(prompt_parts)
-        return complete_prompt
+        return "\n\n".join(prompt_parts)
     
     
 
@@ -439,6 +445,7 @@ Follow these principles:
 - Include any constraints or requirements
 
 Create ONE comprehensive prompt that includes:
+- Name: A descriptive, concise name for this prompt (max 50 characters)
 - Role/Context: Define what role the AI should take
 - Task: Clearly state what needs to be done
 - Requirements: List specific criteria or constraints
@@ -465,7 +472,7 @@ Return only the final prompt without any numbering, section headers, or multiple
         
         # Parse the response to extract a single prompt
         content = response.content[0].text
-        prompt = self._parse_claude_response(content)
+        prompt, prompt_name = self._parse_claude_response(content)
         
         processing_time = int((time.time() - start_time) * 1000)
         
@@ -473,6 +480,7 @@ Return only the final prompt without any numbering, section headers, or multiple
         
         return {
             "prompts": [prompt],
+            "prompt_names": [prompt_name],
             "prompt_types": ["comprehensive_single"],
             "metadata": {
                 "language": "en",
@@ -488,27 +496,41 @@ Return only the final prompt without any numbering, section headers, or multiple
         
             
     
-    def _parse_claude_response(self, content: str) -> str:
+    def _parse_claude_response(self, content: str) -> tuple[str, str]:
         """
-        Parse Claude's response to extract a single prompt.
+        Parse Claude's response to extract a single prompt and its name.
         
         Args:
-            content: The raw response from Claude
+            content: Raw response from Claude API
             
         Returns:
-            Single extracted prompt
+            Tuple of (prompt_text, prompt_name)
         """
-        # Clean up the content by removing any numbering or section headers
+        # Clean up the response
+        content = content.strip()
         lines = content.split('\n')
-        cleaned_lines = []
         
-        for line in lines:
+        # Initialize variables
+        prompt_name = "Claude Generated Prompt"
+        cleaned_lines = []
+        name_extracted = False
+        
+        for i, line in enumerate(lines):
             line = line.strip()
             
             # Skip empty lines at the beginning
             if not line and not cleaned_lines:
                 continue
-                
+            
+            # Try to extract name from the first non-empty line
+            if not name_extracted and line and 'name:' in line.lower():
+                # Extract name from this line
+                if ':' in line:
+                    prompt_name = line.split(':', 1)[1].strip()
+                    name_extracted = True
+                    # Don't add this line to the cleaned content
+                    continue
+            
             # Remove numbered sections (1., 2., 3., etc.)
             if re.match(r'^\d+\.', line):
                 line = re.sub(r'^\d+\.\s*', '', line)
@@ -526,14 +548,27 @@ Return only the final prompt without any numbering, section headers, or multiple
         # Join the cleaned lines into a single prompt
         prompt = '\n'.join(cleaned_lines).strip()
         
+        # If no explicit name was found, try to extract from role/context section
+        if not name_extracted:
+            for line in cleaned_lines:
+                if 'role/context:' in line.lower() and ':' in line:
+                    context_part = line.split(':', 1)[1].strip()
+                    # Create a name from the first few words of context
+                    words = context_part.split()[:4]
+                    if words:
+                        prompt_name = " ".join(words).title()
+                        if len(prompt_name) > 50:
+                            prompt_name = prompt_name[:47] + "..."
+                    break
+        
         # If the prompt is empty or too short, provide a fallback
         if not prompt or len(prompt) < 50:
             print("⚠️ Generated prompt is too short, using fallback")
             prompt = "Create a comprehensive and well-structured prompt for the given input that includes role context, task description, requirements, and format specifications."
         
-        print(f"✅ Generated single prompt: {len(prompt)} characters")
+        print(f"✅ Generated single prompt: {len(prompt)} characters with name: {prompt_name}")
         
-        return prompt
+        return prompt, prompt_name
     
     
 

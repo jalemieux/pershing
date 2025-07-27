@@ -10,6 +10,7 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/auth/initiate', methods=['GET', 'POST'])
 def initiate_auth():
     # If user is already authenticated, redirect to home
+
     if current_user.is_authenticated:
         current_app.logger.info(f"Authenticated user {current_user.id} attempted to access initiate_auth, redirecting to home")
         return redirect(url_for('home'))
@@ -66,9 +67,9 @@ def initiate_auth():
 @auth_bp.route('/auth/verify', methods=['GET', 'POST'])
 def verify_code():
     # # If user is already authenticated, redirect to home
-    # if current_user.is_authenticated:
-    #     current_app.logger.info(f"Authenticated user {current_user.id} attempted to access verify_code, redirecting to home")
-    #     return redirect(url_for('home'))
+    if current_user.is_authenticated:
+        current_app.logger.info(f"Authenticated user {current_user.id} attempted to access verify_code, redirecting to home")
+        return redirect(url_for('home'))
         
     email = request.args.get('email')
     if not email:

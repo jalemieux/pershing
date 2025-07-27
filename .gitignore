@@ -31,4 +31,5 @@ var/
 .idea/
 .vscode/
 *.swp
-*.swo 
+*.swo
+logs/ 

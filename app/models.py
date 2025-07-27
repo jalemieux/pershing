@@ -52,6 +52,36 @@ class User(db.Model, UserMixin):
         
         return len(expired_sessions)
 
+class SavedPrompt(db.Model):
+    """Model for storing user-saved prompts."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    original_message = db.Column(db.Text, nullable=False)
+    model = db.Column(db.String(100), nullable=False)
+    prompt_content = db.Column(db.Text, nullable=False)
+    prompt_type = db.Column(db.String(100), nullable=True)
+    provider = db.Column(db.String(100), nullable=True)
+    prompt_metadata = db.Column(db.Text, nullable=True)  # JSON string for additional data
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('saved_prompts', lazy=True))
+    
+    def to_dict(self):
+        """Convert the saved prompt to a dictionary."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'original_message': self.original_message,
+            'model': self.model,
+            'prompt_content': self.prompt_content,
+            'prompt_type': self.prompt_type,
+            'provider': self.provider,
+            'prompt_metadata': self.prompt_metadata,
+            'created_at': self.created_at.isoformat()
+        }
+
 class VerificationCode(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), nullable=False)

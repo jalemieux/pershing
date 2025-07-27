@@ -17,6 +17,7 @@ class PromptResult:
         self.raw_input = raw_input
         self.prompts = kwargs.get('prompts', [])
         self.prompt_types = kwargs.get('prompt_types', [])
+        self.prompt_names = kwargs.get('prompt_names', [])  # New field for prompt names
         self.metadata = kwargs.get('metadata', {})
         self.context = kwargs.get('context', {})
         # New field for multi-provider results
@@ -31,6 +32,7 @@ class PromptResult:
                 "raw_input": self.raw_input,
                 "prompts": self.prompts,
                 "prompt_types": self.prompt_types,
+                "prompt_names": self.prompt_names,  # Include prompt names
                 "metadata": self.metadata,
                 "context": self.context,
                 "provider_results": self.provider_results
@@ -140,6 +142,7 @@ class MultiProviderPromptCrafter:
         provider_results = {}
         all_prompts = []
         all_prompt_types = []
+        all_prompt_names = [] # Initialize for prompt names
         
         # Generate prompts from each provider
         for provider_name, provider in self.providers.items():
@@ -155,6 +158,10 @@ class MultiProviderPromptCrafter:
                     for prompt_type in prompt_types:
                         all_prompt_types.append(f"{provider_name}_{prompt_type}")
                 
+                # Add prompt names to the combined list
+                if 'prompt_names' in result:
+                    all_prompt_names.extend(result['prompt_names'])
+                
             except Exception as e:
                 # Log error and continue with other providers
                 print(f"Error generating prompts with provider '{provider_name}': {str(e)}")
@@ -162,6 +169,7 @@ class MultiProviderPromptCrafter:
                     "error": str(e),
                     "prompts": [],
                     "prompt_types": [],
+                    "prompt_names": [], # Ensure prompt_names is an empty list on error
                     "metadata": {
                         "provider": provider_name,
                         "error": True
@@ -189,6 +197,7 @@ class MultiProviderPromptCrafter:
             raw_input=user_input,
             prompts=all_prompts,
             prompt_types=all_prompt_types,
+            prompt_names=all_prompt_names, # Pass prompt_names
             metadata=combined_metadata,
             context=context or {},
             provider_results=provider_results
