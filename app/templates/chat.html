@@ -122,6 +122,20 @@
                                             File
                                         </label>
                                         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
+                                        <!-- File selection indicator -->
+                                        <div id="fileIndicator" class="hidden">
+                                            <div class="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                                <span id="fileName" class="text-sm text-blue-800 truncate"></span>
+                                                <button onclick="removeSelectedFile()" class="text-blue-600 hover:text-blue-800">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
                                         <button type="submit" id="sendBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                                             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
@@ -161,8 +175,25 @@ function setupEventListeners() {
     });
     
     messageInput.addEventListener('input', function() {
-        sendBtn.disabled = !this.value.trim();
+        updateSendButtonState();
     });
+    
+    // Add file input listener
+    const fileInput = document.getElementById('fileInput');
+    fileInput.addEventListener('change', function() {
+        updateSendButtonState();
+    });
+}
+
+function updateSendButtonState() {
+    const messageInput = document.getElementById('messageInput');
+    const fileInput = document.getElementById('fileInput');
+    const sendBtn = document.getElementById('sendBtn');
+    
+    const hasMessage = messageInput.value.trim().length > 0;
+    const hasFile = fileInput.files.length > 0;
+    
+    sendBtn.disabled = !(hasMessage || hasFile);
 }
 
 function autoResize(textarea) {
@@ -307,7 +338,17 @@ function renderMessages(messages) {
             <div class="inline-block max-w-xs lg:max-w-md xl:max-w-lg 2xl:max-w-xl">
                 <div class="rounded-lg px-4 py-2 ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}">
                     <div class="text-sm whitespace-pre-wrap">${escapeHtml(msg.content)}</div>
-                    ${msg.file_name ? `<div class="text-xs mt-1 ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'}">📎 ${msg.file_name}</div>` : ''}
+                    ${msg.file_name ? `
+                        <div class="mt-2 p-2 ${msg.role === 'user' ? 'bg-blue-500 border-blue-400' : 'bg-gray-200 border-gray-300'} rounded border">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-600'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span class="text-xs ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-700'} font-medium">${escapeHtml(msg.file_name)}</span>
+                            </div>
+                            <div class="text-xs ${msg.role === 'user' ? 'text-blue-200' : 'text-gray-600'} mt-1 opacity-75">File attached</div>
+                        </div>
+                    ` : ''}
                     <div class="text-xs mt-1 ${msg.role === 'user' ? 'text-blue-100' : 'text-gray-500'}">${formatTime(msg.created_at)}</div>
                 </div>
             </div>
@@ -331,18 +372,46 @@ async function sendMessage() {
     
     // Add user message to UI immediately
     const messagesContainer = document.getElementById('messagesContainer');
+    const fileInputForDisplay = document.getElementById('fileInput');
+    const hasFile = fileInputForDisplay.files.length > 0;
+    const fileName = hasFile ? fileInputForDisplay.files[0].name : '';
+    
     const userMessageHtml = `
         <div class="message mb-4 text-right">
             <div class="inline-block max-w-xs lg:max-w-md xl:max-w-lg 2xl:max-w-xl">
                 <div class="rounded-lg px-4 py-2 bg-blue-600 text-white">
                     <div class="text-sm whitespace-pre-wrap">${escapeHtml(message)}</div>
+                    ${hasFile ? `
+                        <div class="mt-2 p-2 bg-blue-500 rounded border border-blue-400">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                <span class="text-xs text-blue-200 font-medium">${escapeHtml(fileName)}</span>
+                            </div>
+                            <div class="text-xs text-blue-200 mt-1 opacity-75">File uploaded successfully</div>
+                            <div id="filePreview-${Date.now()}" class="mt-2 text-xs text-blue-200 opacity-75">
+                                <div class="animate-pulse">Reading file content...</div>
+                            </div>
+                        </div>
+                    ` : ''}
                     <div class="text-xs mt-1 text-blue-100">${formatTime(new Date())}</div>
                 </div>
             </div>
         </div>
     `;
+    
     messagesContainer.insertAdjacentHTML('beforeend', userMessageHtml);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    
+    // Read and display file content if file is present
+    if (hasFile) {
+        const file = fileInputForDisplay.files[0];
+        const previewId = 'filePreview-' + Date.now();
+        setTimeout(() => {
+            readFileContent(file, previewId);
+        }, 100);
+    }
     
     // Show typing indicator
     showTypingIndicator();
@@ -351,15 +420,18 @@ async function sendMessage() {
     const requestData = { message: message };
     
     // Add file data if present
-    const fileInput = document.getElementById('fileInput');
-    if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
+    const fileInputForProcess = document.getElementById('fileInput');
+    if (fileInputForProcess.files.length > 0) {
+        const file = fileInputForProcess.files[0];
         const base64 = await fileToBase64(file);
         requestData.file = {
             name: file.name,
             content: base64
         };
-        fileInput.value = ''; // Clear file input
+        fileInputForProcess.value = ''; // Clear file input
+        // Clear file indicator
+        document.getElementById('fileName').textContent = '';
+        document.getElementById('fileIndicator').classList.add('hidden');
     }
     
     try {
@@ -407,8 +479,69 @@ async function sendMessage() {
 function handleFileSelect(event) {
     const file = event.target.files[0];
     if (file) {
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileIndicator').classList.remove('hidden');
         console.log('File selected:', file.name);
+        
+        // Add file preview to the indicator
+        const fileIndicator = document.getElementById('fileIndicator');
+        const previewId = 'filePreview-' + Date.now();
+        fileIndicator.innerHTML = `
+            <div class="flex items-center space-x-2 p-2 bg-blue-50 border border-blue-200 rounded-md">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <span id="fileName" class="text-sm text-blue-800 truncate">${escapeHtml(file.name)}</span>
+                <button onclick="removeSelectedFile()" class="text-blue-600 hover:text-blue-800">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="${previewId}" class="mt-2 text-xs text-blue-600">
+                <div class="animate-pulse">Reading file content...</div>
+            </div>
+        `;
+        
+        // Read and display file content
+        readFileContent(file, previewId);
     }
+}
+
+function removeSelectedFile() {
+    document.getElementById('fileInput').value = ''; // Clear file input
+    document.getElementById('fileIndicator').classList.add('hidden');
+    updateSendButtonState();
+}
+
+function readFileContent(file, previewElementId) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        const previewElement = document.getElementById(previewElementId);
+        
+        if (previewElement) {
+            // For text files, show first 200 characters
+            if (file.type.startsWith('text/') || file.name.endsWith('.txt') || file.name.endsWith('.md') || file.name.endsWith('.json') || file.name.endsWith('.py') || file.name.endsWith('.js') || file.name.endsWith('.html') || file.name.endsWith('.css')) {
+                const preview = content.length > 200 ? content.substring(0, 200) + '...' : content;
+                previewElement.innerHTML = `
+                    <div class="bg-blue-600 rounded p-2 mt-1">
+                        <div class="text-xs font-medium mb-1">File Preview:</div>
+                        <div class="text-xs opacity-90 whitespace-pre-wrap">${escapeHtml(preview)}</div>
+                    </div>
+                `;
+            } else {
+                // For other file types, show file info
+                const fileSize = (file.size / 1024).toFixed(1);
+                previewElement.innerHTML = `
+                    <div class="text-xs opacity-75">
+                        File size: ${fileSize} KB
+                    </div>
+                `;
+            }
+        }
+    };
+    reader.readAsText(file);
 }
 
 function fileToBase64(file) {
