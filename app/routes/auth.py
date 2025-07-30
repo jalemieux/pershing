@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app.models import User, VerificationCode, UserSession
 from app.email_service import EmailService
 from app.database import db
+from app.throttling_service import throttling_service
 from datetime import datetime, timedelta
 
 auth_bp = Blueprint('auth', __name__)
@@ -27,17 +28,15 @@ def initiate_auth():
     
     current_app.logger.info(f"Auth initiation requested for email: {email}")
     
-    # Rate limiting check
-    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
-    recent_codes = VerificationCode.query.filter(
-        VerificationCode.email == email,
-        VerificationCode.created_at >= one_hour_ago
-    ).count()
-    
-    if recent_codes >= 5:
-        current_app.logger.warning(f"Rate limit exceeded for email: {email} (attempts: {recent_codes})")
-        flash('Too many code requests. Please try again later.')
+    # Check throttling before proceeding
+    is_throttled, message = throttling_service.check_auth_throttling(email)
+    if is_throttled:
+        current_app.logger.warning(f"Throttling blocked auth initiation for email: {email}")
+        flash(message)
         return redirect(url_for('auth.initiate_auth'))
+    
+    # Record the attempt
+    throttling_service.record_auth_attempt(email)
     
     # Create or get user
     user = User.query.filter_by(email=email).first()
@@ -89,6 +88,16 @@ def verify_code():
     
     current_app.logger.info(f"Verification attempt for email: {email}")
     
+    # Check throttling before proceeding
+    is_throttled, message = throttling_service.check_verify_throttling(email)
+    if is_throttled:
+        current_app.logger.warning(f"Throttling blocked verification for email: {email}")
+        flash(message)
+        return redirect(url_for('auth.verify_code', email=email))
+    
+    # Record the attempt
+    throttling_service.record_verify_attempt(email)
+    
     verification = VerificationCode.query.filter_by(
         email=email,
         used=False
@@ -134,6 +143,9 @@ def verify_code():
     
     # Log user in with persistent session (always remember=True)
     login_user(user, remember=True, duration=timedelta(days=90), force=True, fresh=False)
+    
+    # Reset throttling attempts after successful authentication
+    throttling_service.reset_auth_attempts(email)
     
     db.session.commit()
     
