@@ -69,6 +69,7 @@ class IntentAnalysisResult(BaseModel):
     disambiguation: Disambiguation = Field(description="Disambiguation information")
     fulfillment: Fulfillment = Field(description="Fulfillment information")
     metadata: Metadata = Field(description="Metadata information")
+    natural_language_intent: str = Field(description="Description of the user's intent in natural language")
 
 
 # Prompt Crafting Pydantic Models
@@ -265,7 +266,8 @@ class AnthropicProvider(LLMProvider):
                 "sentiment": "neutral",
                 "urgency": "medium",
                 "processing_time_ms": 150
-            }
+            },
+            "natural_language_intent": "User is making a general inquiry"
         } 
 
 # Prompt Crafter LLM Providers

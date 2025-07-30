@@ -116,7 +116,9 @@ The `IntentResult` object contains the following structured data:
       "sentiment": "neutral",
       "urgency": "medium",
       "processing_time_ms": 145
-    }
+    },
+    
+    "natural_language_intent": "User wants to book a flight to New York for tomorrow morning"
   }
 }
 ```
@@ -150,6 +152,7 @@ The `IntentResult` object contains the following structured data:
 - `disambiguation`: Clarification needs
 - `fulfillment`: Action and service information
 - `metadata`: Processing metadata
+- `natural_language_intent`: Human-readable description of the user's intent
 
 #### Methods
 

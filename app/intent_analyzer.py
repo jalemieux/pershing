@@ -22,6 +22,7 @@ class IntentResult:
         self.disambiguation = kwargs.get('disambiguation', {})
         self.fulfillment = kwargs.get('fulfillment', {})
         self.metadata = kwargs.get('metadata', {})
+        self.natural_language_intent = kwargs.get('natural_language_intent', '')
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert the intent result to a dictionary."""
@@ -37,7 +38,8 @@ class IntentResult:
                 "constraints": self.constraints,
                 "disambiguation": self.disambiguation,
                 "fulfillment": self.fulfillment,
-                "metadata": self.metadata
+                "metadata": self.metadata,
+                "natural_language_intent": self.natural_language_intent
             }
         }
     
@@ -133,6 +135,11 @@ class MockLLMProvider(LLMProvider):
             if not any(e["type"] == "date" for e in entities):
                 missing_slots.append("departure_date")
         
+        # Generate natural language intent description
+        natural_language_intent = self._generate_natural_language_intent(
+            primary_intent, domain, category, entities, message
+        )
+        
         # Build the result
         return {
             "classification": {
@@ -172,8 +179,58 @@ class MockLLMProvider(LLMProvider):
                 "sentiment": "neutral",
                 "urgency": "medium",
                 "processing_time_ms": 100
-            }
+            },
+            "natural_language_intent": natural_language_intent
         }
+    
+    def _generate_natural_language_intent(self, primary_intent: str, domain: str, category: str, 
+                                        entities: List[Dict], original_message: str) -> str:
+        """
+        Generate a natural language description of the intent.
+        
+        Args:
+            primary_intent: The primary intent identifier
+            domain: The domain of the intent
+            category: The category of the intent
+            entities: List of extracted entities
+            original_message: The original user message
+            
+        Returns:
+            Natural language description of the intent
+        """
+        # Extract key information from entities
+        destinations = [e for e in entities if e["type"] == "destination"]
+        dates = [e for e in entities if e["type"] == "date"]
+        times = [e for e in entities if e["type"] == "time"]
+        
+        # Generate natural language descriptions based on intent type
+        if primary_intent == "book_flight":
+            if destinations and dates:
+                return f"User wants to book a flight to {destinations[0]['value']} on {dates[0]['value']}"
+            elif destinations:
+                return f"User wants to book a flight to {destinations[0]['value']}"
+            elif dates:
+                return f"User wants to book a flight on {dates[0]['value']}"
+            else:
+                return "User wants to book a flight"
+        
+        elif primary_intent == "get_weather":
+            if destinations:
+                return f"User wants to know the weather in {destinations[0]['value']}"
+            else:
+                return "User wants to know the weather information"
+        
+        elif primary_intent == "get_help":
+            return "User is seeking help or support"
+        
+        else:
+            # For general inquiries, try to extract some context from the message
+            if destinations:
+                return f"User is making a general inquiry about {destinations[0]['value']}"
+            elif dates:
+                return f"User is making a general inquiry about {dates[0]['value']}"
+            else:
+                return "User is making a general inquiry"
 
 
 class IntentAnalyzer:
