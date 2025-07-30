@@ -1,75 +1,83 @@
-2025-07-26 18:54:10,235 - app - INFO - Loading user 1
-2025-07-26 18:54:14,616 - app - INFO - Loading user 1
-2025-07-26 18:54:14,634 - app - INFO - Prompt deleted for user 1: AI Companion Simulation Prompt
-2025-07-26 18:54:14,641 - app - INFO - Loading user 1
-2025-07-27 09:37:30,885 - app - INFO - Logging is set up.
-2025-07-27 09:38:51,305 - app - INFO - Logging is set up.
-2025-07-27 09:41:00,153 - app - INFO - Logging is set up.
-2025-07-27 09:41:00,860 - app - INFO - Logging is set up.
-2025-07-27 09:41:05,362 - app - INFO - Loading user 1
-2025-07-27 09:41:05,403 - app - INFO - Loading user 1
-2025-07-27 09:41:05,414 - app - INFO - Loading user 1
-2025-07-27 09:41:05,419 - app - INFO - Loading user 1
-2025-07-27 09:41:05,420 - app - DEBUG - GET request to initiate_auth page
-2025-07-27 09:41:11,242 - app - INFO - Loading user 1
-2025-07-27 09:41:11,250 - app - INFO - Loading user 1
-2025-07-27 09:41:11,255 - app - INFO - Auth initiation requested for email: jalemieux@gmail.com
-2025-07-27 09:41:11,276 - app - INFO - Creating new user for email: jalemieux@gmail.com
-2025-07-27 09:41:11,454 - app - INFO - Verification code generated for email: jalemieux@gmail.com (code_id: 1)
-2025-07-27 09:41:12,938 - app - INFO - Verification code sent successfully to: jalemieux@gmail.com
-2025-07-27 09:41:12,949 - app - INFO - Loading user 1
-2025-07-27 09:41:12,955 - app - INFO - Authenticated user 1 attempted to access verify_code, redirecting to home
-2025-07-27 09:41:12,962 - app - INFO - Loading user 1
-2025-07-27 09:41:16,849 - app - INFO - Loading user 1
-2025-07-27 09:41:16,901 - app - INFO - Loading user 1
-2025-07-27 09:44:33,339 - app - INFO - Loading user 1
-2025-07-27 09:44:33,591 - app - INFO - Loading user 1
-2025-07-27 09:44:42,365 - app - INFO - Loading user 1
-2025-07-27 09:44:42,388 - app - INFO - Created conversation 1 for user 1
-2025-07-27 09:44:42,416 - app - INFO - Loading user 1
-2025-07-27 09:44:43,664 - app - INFO - Loading user 1
-2025-07-27 09:44:47,983 - app - INFO - Loading user 1
-2025-07-27 09:44:48,022 - app - INFO - Deleted conversation 1 for user 1
-2025-07-27 09:45:18,072 - app - INFO - Loading user 1
-2025-07-27 09:45:18,091 - app - INFO - Created conversation 2 for user 1
-2025-07-27 09:45:18,100 - app - INFO - Loading user 1
-2025-07-27 09:45:20,528 - app - INFO - Loading user 1
-2025-07-27 09:45:20,542 - app - INFO - Added message 1 to conversation 2
-2025-07-27 09:45:22,243 - app - INFO - Added message 2 to conversation 2
-2025-07-27 09:45:22,265 - app - INFO - Loading user 1
-2025-07-27 09:48:59,105 - app - INFO - Logging is set up.
-2025-07-27 09:49:11,781 - app - INFO - Logging is set up.
-2025-07-27 09:49:29,469 - app - INFO - Logging is set up.
-2025-07-27 09:50:08,278 - app - INFO - Loading user 1
-2025-07-27 09:50:08,302 - app - INFO - Loading user 1
-2025-07-27 09:50:08,311 - app - INFO - Loading user 1
-2025-07-27 09:50:08,313 - app - INFO - Loading user 1
-2025-07-27 09:50:08,315 - app - DEBUG - GET request to initiate_auth page
-2025-07-27 09:50:18,110 - app - INFO - Loading user 1
-2025-07-27 09:50:18,124 - app - INFO - Loading user 1
-2025-07-27 09:50:18,129 - app - INFO - Auth initiation requested for email: jalemieux@gmail.com
-2025-07-27 09:50:18,147 - app - INFO - Creating new user for email: jalemieux@gmail.com
-2025-07-27 09:50:18,309 - app - INFO - Verification code generated for email: jalemieux@gmail.com (code_id: 1)
-2025-07-27 09:50:19,511 - app - INFO - Loading user 1
-2025-07-27 09:50:19,541 - app - INFO - Authenticated user 1 attempted to access initiate_auth, redirecting to home
-2025-07-27 09:50:19,547 - app - INFO - Loading user 1
-2025-07-27 09:50:19,937 - app - INFO - Verification code sent successfully to: jalemieux@gmail.com
-2025-07-27 09:50:21,146 - app - INFO - Loading user 1
-2025-07-27 09:50:21,265 - app - INFO - Loading user 1
-2025-07-27 09:50:28,960 - app - INFO - Loading user 1
-2025-07-27 09:50:28,974 - app - INFO - Created conversation 1 for user 1
-2025-07-27 09:50:28,987 - app - INFO - Loading user 1
-2025-07-27 09:50:30,498 - app - INFO - Loading user 1
-2025-07-27 09:50:30,522 - app - INFO - Added message 1 to conversation 1
-2025-07-27 09:50:31,979 - app - INFO - Added message 2 to conversation 1
-2025-07-27 09:50:32,010 - app - INFO - Loading user 1
-2025-07-27 09:50:43,537 - app - INFO - Loading user 1
-2025-07-27 09:50:43,553 - app - INFO - Added message 3 to conversation 1
-2025-07-27 09:50:47,959 - app - INFO - Added message 4 to conversation 1
-2025-07-27 09:50:47,975 - app - INFO - Loading user 1
-2025-07-27 09:50:52,417 - app - INFO - Loading user 1
-2025-07-27 09:50:52,432 - app - INFO - Created conversation 2 for user 1
-2025-07-27 09:50:52,444 - app - INFO - Loading user 1
-2025-07-27 09:50:53,369 - app - INFO - Loading user 1
-2025-07-27 09:50:54,073 - app - INFO - Loading user 1
-2025-07-27 09:50:54,924 - app - INFO - Loading user 1
+2025-07-29 21:31:15,059 - app - INFO - Loading user 1
+2025-07-29 21:31:15,087 - app - INFO - Created conversation 1 for user 1
+2025-07-29 21:31:15,114 - app - INFO - Loading user 1
+2025-07-29 21:31:17,658 - app - INFO - Loading user 1
+2025-07-29 21:31:17,685 - app - INFO - Added message 2 to conversation 1
+2025-07-29 21:31:21,805 - app - INFO - Added message 3 to conversation 1
+2025-07-29 21:31:21,837 - app - INFO - Loading user 1
+2025-07-29 21:31:47,016 - app - INFO - Loading user 1
+2025-07-29 21:31:47,043 - app - INFO - Added message 4 to conversation 1
+2025-07-29 21:31:50,686 - app - INFO - Added message 5 to conversation 1
+2025-07-29 21:31:50,715 - app - INFO - Loading user 1
+2025-07-29 21:32:07,577 - app - INFO - Loading user 1
+2025-07-29 21:32:07,595 - app - INFO - Created conversation 2 for user 1
+2025-07-29 21:32:07,611 - app - INFO - Loading user 1
+2025-07-29 21:32:08,944 - app - INFO - Loading user 1
+2025-07-29 21:32:13,513 - app - INFO - Loading user 1
+2025-07-29 21:32:13,602 - app - INFO - Loading user 1
+2025-07-29 21:32:22,798 - app - INFO - Loading user 1
+2025-07-29 21:32:22,879 - app - INFO - Loading user 1
+2025-07-29 21:35:15,346 - app - INFO - Loading user 1
+2025-07-29 21:35:15,988 - app - INFO - Loading user 1
+2025-07-29 21:35:22,506 - app - INFO - Loading user 1
+2025-07-29 21:35:22,546 - app - INFO - Created conversation 3 for user 1
+2025-07-29 21:35:22,598 - app - INFO - Loading user 1
+2025-07-29 21:35:22,611 - app - INFO - Added message 8 to conversation 3
+2025-07-29 21:35:26,944 - app - INFO - Added message 9 to conversation 3
+2025-07-29 21:35:26,980 - app - INFO - Loading user 1
+2025-07-29 21:35:34,430 - app - INFO - Loading user 1
+2025-07-29 21:35:34,448 - app - INFO - Created conversation 4 for user 1
+2025-07-29 21:35:34,468 - app - INFO - Loading user 1
+2025-07-29 21:36:22,996 - app - INFO - Loading user 1
+2025-07-29 21:36:23,100 - app - INFO - Loading user 1
+2025-07-29 21:38:19,099 - app - INFO - Loading user 1
+2025-07-29 21:38:19,210 - app - INFO - Loading user 1
+2025-07-29 21:38:28,898 - app - INFO - Loading user 1
+2025-07-29 21:38:29,012 - app - INFO - Loading user 1
+2025-07-29 21:38:31,144 - app - INFO - Loading user 1
+2025-07-29 21:38:37,945 - app - INFO - Loading user 1
+2025-07-29 21:38:38,050 - app - INFO - Loading user 1
+2025-07-29 21:39:04,987 - app - INFO - Logging is set up.
+2025-07-29 21:39:19,670 - app - INFO - Logging is set up.
+2025-07-29 21:39:52,289 - app - INFO - Logging is set up.
+2025-07-29 21:40:08,805 - app - INFO - Loading user 1
+2025-07-29 21:40:08,855 - app - INFO - Loading user 1
+2025-07-29 21:40:08,882 - app - INFO - Loading user 1
+2025-07-29 21:40:08,886 - app - INFO - Loading user 1
+2025-07-29 21:40:08,888 - app - DEBUG - GET request to initiate_auth page
+2025-07-29 21:40:14,264 - app - INFO - Loading user 1
+2025-07-29 21:40:14,269 - app - INFO - Loading user 1
+2025-07-29 21:40:14,276 - app - INFO - Auth initiation requested for email: jalemieux@gmail.com
+2025-07-29 21:40:14,297 - app - INFO - Creating new user for email: jalemieux@gmail.com
+2025-07-29 21:40:14,478 - app - INFO - Verification code generated for email: jalemieux@gmail.com (code_id: 1)
+2025-07-29 21:40:15,955 - app - INFO - Verification code sent successfully to: jalemieux@gmail.com
+2025-07-29 21:40:15,964 - app - INFO - Loading user 1
+2025-07-29 21:40:15,967 - app - INFO - Authenticated user 1 attempted to access verify_code, redirecting to home
+2025-07-29 21:40:15,973 - app - INFO - Loading user 1
+2025-07-29 21:40:28,023 - app - INFO - Loading user 1
+2025-07-29 21:40:28,140 - app - INFO - Loading user 1
+2025-07-29 21:40:32,431 - app - INFO - Loading user 1
+2025-07-29 21:40:32,533 - app - INFO - Loading user 1
+2025-07-29 21:41:13,813 - app - INFO - Logging is set up.
+2025-07-29 21:41:32,187 - app - INFO - Loading user 1
+2025-07-29 21:41:32,244 - app - INFO - Loading user 1
+2025-07-29 21:41:32,263 - app - INFO - Loading user 1
+2025-07-29 21:41:32,266 - app - INFO - Loading user 1
+2025-07-29 21:41:32,267 - app - DEBUG - GET request to initiate_auth page
+2025-07-29 21:41:36,801 - app - INFO - Loading user 1
+2025-07-29 21:41:36,806 - app - INFO - Loading user 1
+2025-07-29 21:41:36,813 - app - INFO - Auth initiation requested for email: jalemieux@gmakil.com
+2025-07-29 21:41:36,831 - app - INFO - Creating new user for email: jalemieux@gmakil.com
+2025-07-29 21:41:37,007 - app - INFO - Verification code generated for email: jalemieux@gmakil.com (code_id: 1)
+2025-07-29 21:41:38,618 - app - INFO - Verification code sent successfully to: jalemieux@gmakil.com
+2025-07-29 21:41:38,623 - app - INFO - Loading user 1
+2025-07-29 21:41:38,627 - app - INFO - Authenticated user 1 attempted to access verify_code, redirecting to home
+2025-07-29 21:41:38,630 - app - INFO - Loading user 1
+2025-07-29 21:41:41,830 - app - INFO - Loading user 1
+2025-07-29 21:41:41,913 - app - INFO - Loading user 1
+2025-07-29 21:42:10,842 - app - INFO - Loading user 1
+2025-07-29 21:50:11,860 - app - INFO - Loading user 1
+2025-07-29 21:50:15,903 - app - INFO - Loading user 1
+2025-07-29 21:50:34,251 - app - INFO - Loading user 1
+2025-07-29 21:50:36,069 - app - INFO - Loading user 1
+2025-07-29 21:50:36,147 - app - INFO - Loading user 1

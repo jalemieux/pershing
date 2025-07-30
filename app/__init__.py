@@ -119,5 +119,9 @@ def create_app(config_class=None):
     # Register chat blueprint
     from app.routes.chat import chat_bp
     app.register_blueprint(chat_bp)
+    
+    # Register buddies blueprint
+    from app.routes.buddies import buddies_bp
+    app.register_blueprint(buddies_bp)
 
     return app

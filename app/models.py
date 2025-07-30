@@ -144,6 +144,7 @@ class Conversation(db.Model):
     """Model for storing chat conversations."""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    buddy_id = db.Column(db.Integer, db.ForeignKey('buddy.id'), nullable=True)  # Link to buddy if this is a buddy conversation
     title = db.Column(db.String(255), nullable=False, default='New Conversation')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -152,6 +153,7 @@ class Conversation(db.Model):
     
     # Relationships
     user = db.relationship('User', backref=db.backref('conversations', lazy=True))
+    buddy = db.relationship('Buddy', backref=db.backref('conversations', lazy=True))
     messages = db.relationship('Message', backref='conversation', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
@@ -222,3 +224,84 @@ class Message(db.Model):
     def is_file_message(self):
         """Check if this message contains a file."""
         return self.content_type in ['image', 'file'] and self.file_path is not None 
+
+class Buddy(db.Model):
+    """Model for storing user-created Buddies."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    initial_prompt = db.Column(db.Text, nullable=False)
+    memory_type = db.Column(db.String(50), nullable=False, default='short_term')  # short_term, long_term, task_specific
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('buddies', lazy=True))
+    tools = db.relationship('BuddyTool', backref='buddy', lazy=True, cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        """Convert the buddy to a dictionary."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'initial_prompt': self.initial_prompt,
+            'memory_type': self.memory_type,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat(),
+            'tools': [tool.to_dict() for tool in self.tools]
+        }
+
+class BuddyTool(db.Model):
+    """Model for storing tools that Buddies can use."""
+    id = db.Column(db.Integer, primary_key=True)
+    buddy_id = db.Column(db.Integer, db.ForeignKey('buddy.id'), nullable=False)
+    tool_name = db.Column(db.String(255), nullable=False)
+    tool_type = db.Column(db.String(100), nullable=False)  # api, database, file_system, etc.
+    tool_config = db.Column(db.Text, nullable=True)  # JSON string for tool configuration
+    is_enabled = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert the buddy tool to a dictionary."""
+        return {
+            'id': self.id,
+            'tool_name': self.tool_name,
+            'tool_type': self.tool_type,
+            'tool_config': self.tool_config,
+            'is_enabled': self.is_enabled,
+            'created_at': self.created_at.isoformat()
+        }
+
+class BuddyMemory(db.Model):
+    """Model for storing Buddy memory data."""
+    id = db.Column(db.Integer, primary_key=True)
+    buddy_id = db.Column(db.Integer, db.ForeignKey('buddy.id'), nullable=False)
+    memory_type = db.Column(db.String(50), nullable=False)  # short_term, long_term, task_specific
+    memory_key = db.Column(db.String(255), nullable=False)
+    memory_value = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=True)  # For short-term memory
+    
+    # Relationships
+    buddy = db.relationship('Buddy', backref=db.backref('memories', lazy=True))
+    
+    def to_dict(self):
+        """Convert the buddy memory to a dictionary."""
+        return {
+            'id': self.id,
+            'memory_type': self.memory_type,
+            'memory_key': self.memory_key,
+            'memory_value': self.memory_value,
+            'created_at': self.created_at.isoformat(),
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None
+        }
+    
+    def is_expired(self):
+        """Check if this memory entry has expired."""
+        if self.expires_at:
+            return datetime.utcnow() > self.expires_at
+        return False 

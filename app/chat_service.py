@@ -18,12 +18,13 @@ class ChatService:
         self.upload_folder = os.path.join(current_app.root_path, 'uploads', 'chat')
         os.makedirs(self.upload_folder, exist_ok=True)
     
-    def create_conversation(self, user_id: int, title: str = "New Conversation", conversation_type: str = "text") -> Conversation:
+    def create_conversation(self, user_id: int, title: str = "New Conversation", conversation_type: str = "text", buddy_id: int = None) -> Conversation:
         """Create a new conversation for a user."""
         conversation = Conversation(
             user_id=user_id,
             title=title,
-            conversation_type=conversation_type
+            conversation_type=conversation_type,
+            buddy_id=buddy_id
         )
         db.session.add(conversation)
         db.session.commit()
@@ -115,7 +116,7 @@ class ChatService:
         context_messages = self._get_conversation_context(conversation_id)
         
         # Generate AI response
-        ai_response = self._generate_ai_response(context_messages, file_path)
+        ai_response = self._generate_ai_response(context_messages, file_path, conversation_id)
         
         response_time = time.time() - start_time
         
@@ -138,6 +139,34 @@ class ChatService:
             db.session.commit()
         
         return user_message, assistant_message
+    
+    def send_message(self, conversation_id: int, user_id: int, message_content: str, 
+                    file_data: Optional[Dict] = None) -> Dict:
+        """Send a message and get a response. Returns a dictionary with user and assistant messages."""
+        try:
+            user_message, assistant_message = self.process_user_message(
+                user_id=user_id,
+                conversation_id=conversation_id,
+                message_content=message_content,
+                file_data=file_data
+            )
+            
+            if assistant_message:
+                return {
+                    'user_message': user_message.to_dict(),
+                    'assistant_message': assistant_message.to_dict(),
+                    'conversation': Conversation.query.get(conversation_id).to_dict()
+                }
+            else:
+                return {
+                    'user_message': user_message.to_dict(),
+                    'assistant_message': None,
+                    'conversation': Conversation.query.get(conversation_id).to_dict()
+                }
+                
+        except Exception as e:
+            current_app.logger.error(f"Error sending message: {str(e)}")
+            raise
     
     def _handle_file_upload(self, file_data: Dict, conversation_id: int) -> Tuple[str, str, int]:
         """Handle file upload and return file path, name, and size."""
@@ -179,12 +208,25 @@ class ChatService:
         
         return context
     
-    def _generate_ai_response(self, context_messages: List[Dict], file_path: Optional[str] = None) -> Dict:
+    def _generate_ai_response(self, context_messages: List[Dict], file_path: Optional[str] = None, conversation_id: int = None) -> Dict:
         """Generate AI response using the configured LLM provider."""
         try:
+            # Check if this is a buddy conversation
+            buddy_prompt = None
+            if conversation_id:
+                conversation = Conversation.query.get(conversation_id)
+                if conversation and conversation.buddy_id:
+                    from app.models import Buddy
+                    buddy = Buddy.query.get(conversation.buddy_id)
+                    if buddy:
+                        buddy_prompt = buddy.initial_prompt
+            
             # Prepare system prompt
-            system_prompt = """You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user questions. 
-            If a file is uploaded, analyze it and provide relevant insights. Be conversational but professional."""
+            if buddy_prompt:
+                system_prompt = buddy_prompt
+            else:
+                system_prompt = """You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user questions. 
+                If a file is uploaded, analyze it and provide relevant insights. Be conversational but professional."""
             
             # Prepare messages for LLM
             messages = [{"role": "system", "content": system_prompt}]
