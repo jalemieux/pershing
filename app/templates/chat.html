@@ -484,7 +484,7 @@ function renderMessages(messages) {
         
         return `
             <div class="message mb-6 ${alignmentClass}">
-                <div class="message-bubble ${messageClass} rounded-lg px-4 py-3 shadow-sm">
+                <div class="message-bubble ${messageClass} rounded-lg px-4 py-3 shadow-sm relative group">
                     <div class="markdown-content text-sm">${renderedContent}</div>
                     ${msg.file_name ? `
                         <div class="mt-3 p-2 ${messageClass === 'user' ? 'bg-blue-500 border-blue-400' : messageClass === 'system' ? 'bg-yellow-200 border-yellow-300' : 'bg-gray-200 border-gray-300'} rounded border">
@@ -498,6 +498,14 @@ function renderMessages(messages) {
                         </div>
                     ` : ''}
                     <div class="text-xs mt-2 ${messageClass === 'user' ? 'text-blue-100' : messageClass === 'system' ? 'text-yellow-600' : 'text-gray-500'} opacity-75">${formatTime(msg.created_at)}</div>
+                    <div class="absolute top-2 ${messageClass === 'user' ? 'left-2' : 'right-2'} opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="copyMessageToClipboard(this)" class="p-1 rounded hover:bg-gray-200 hover:bg-opacity-50" title="Copy message" data-message="${escapeHtml(msg.content)}">
+                            <svg class="w-4 h-4 ${messageClass === 'user' ? 'text-blue-200' : messageClass === 'system' ? 'text-yellow-600' : 'text-gray-500'}" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -569,7 +577,7 @@ async function sendMessage() {
     
     const userMessageHtml = `
         <div class="message mb-6 text-right">
-            <div class="message-bubble user rounded-lg px-4 py-3 shadow-sm">
+            <div class="message-bubble user rounded-lg px-4 py-3 shadow-sm relative group">
                 <div class="markdown-content text-sm">${escapeHtml(message)}</div>
                 ${hasFile ? `
                     <div class="mt-3 p-2 bg-blue-500 rounded border border-blue-400">
@@ -586,6 +594,14 @@ async function sendMessage() {
                     </div>
                 ` : ''}
                 <div class="text-xs mt-2 text-blue-100 opacity-75">${formatTime(new Date())}</div>
+                <div class="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="copyMessageToClipboard(this)" class="p-1 rounded hover:bg-gray-200 hover:bg-opacity-50" title="Copy message" data-message="${escapeHtml(message)}">
+                        <svg class="w-4 h-4 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     `;
@@ -641,9 +657,17 @@ async function sendMessage() {
             // Add assistant message
             const assistantMessageHtml = `
                 <div class="message mb-6 text-left">
-                    <div class="message-bubble assistant rounded-lg px-4 py-3 shadow-sm">
+                    <div class="message-bubble assistant rounded-lg px-4 py-3 shadow-sm relative group">
                         <div class="markdown-content text-sm">${renderMarkdown(data.assistant_message.content, 'assistant')}</div>
                         <div class="text-xs mt-2 text-gray-500 opacity-75">${formatTime(data.assistant_message.created_at)}</div>
+                        <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="copyMessageToClipboard(this)" class="p-1 rounded hover:bg-gray-200 hover:bg-opacity-50" title="Copy message" data-message="${escapeHtml(data.assistant_message.content)}">
+                                <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -879,6 +903,36 @@ function formatDate(dateString) {
 function formatTime(dateString) {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function copyMessageToClipboard(button) {
+    const message = button.getAttribute('data-message');
+    navigator.clipboard.writeText(message).then(() => {
+        const svg = button.querySelector('svg');
+        const originalColor = svg.classList.contains('text-blue-200') ? 'text-blue-200' : 'text-gray-500';
+        
+        // Change to green to indicate success
+        svg.classList.remove(originalColor);
+        svg.classList.add('text-green-500');
+        
+        // Show a brief tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded z-50';
+        tooltip.textContent = 'Copied!';
+        button.appendChild(tooltip);
+        
+        setTimeout(() => {
+            // Revert color and remove tooltip
+            svg.classList.remove('text-green-500');
+            svg.classList.add(originalColor);
+            if (tooltip.parentNode) {
+                tooltip.parentNode.removeChild(tooltip);
+            }
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy message to clipboard:', err);
+        showError('Failed to copy message to clipboard');
+    });
 }
 </script>
 {% endblock %} 
