@@ -21,6 +21,37 @@ def create_buddy_page():
     available_tools = buddy_service.get_available_tools()
     return render_template('buddies/create.html', user=current_user, tools=available_tools)
 
+@buddies_bp.route('/buddies/<int:buddy_id>')
+@login_required
+def buddy_detail(buddy_id):
+    """Buddy detail page."""
+    buddy_service = get_buddy_service()
+    buddy = buddy_service.get_buddy(buddy_id, current_user.id)
+    
+    if not buddy:
+        return "Buddy not found", 404
+    
+    return render_template('buddies/detail.html', user=current_user, buddy=buddy)
+
+@buddies_bp.route('/buddies/<int:buddy_id>/conversations')
+@login_required
+def buddy_conversations(buddy_id):
+    """Buddy conversations page."""
+    buddy_service = get_buddy_service()
+    buddy = buddy_service.get_buddy(buddy_id, current_user.id)
+    
+    if not buddy:
+        return "Buddy not found", 404
+    
+    # Get conversations for this buddy
+    conversations = Conversation.query.filter_by(
+        buddy_id=buddy_id,
+        user_id=current_user.id,
+        is_active=True
+    ).order_by(Conversation.updated_at.desc()).all()
+    
+    return render_template('buddies/conversations.html', user=current_user, buddy=buddy, conversations=conversations)
+
 @buddies_bp.route('/api/buddies', methods=['GET'])
 @login_required
 def get_buddies():
