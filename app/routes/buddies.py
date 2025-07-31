@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.buddy_service import get_buddy_service
 from app.models import Buddy, Conversation, Message
 from app.database import db
+from app.prompt_crafter import get_multi_provider_prompt_crafter
 import json
 
 buddies_bp = Blueprint('buddies', __name__)
@@ -297,4 +298,88 @@ def chat_with_buddy(buddy_id):
     if not buddy:
         return "Buddy not found", 404
     
-    return render_template('buddies/chat.html', user=current_user, buddy=buddy) 
+    return render_template('buddies/chat.html', user=current_user, buddy=buddy)
+
+@buddies_bp.route('/api/buddies/<int:buddy_id>/tweak-prompt', methods=['POST'])
+@login_required
+def tweak_buddy_prompt(buddy_id):
+    """Generate an improved prompt based on natural language input."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        tweak_request = data.get('tweak_request', '').strip()
+        
+        if not tweak_request:
+            return jsonify({
+                'success': False,
+                'error': 'Tweak request is required'
+            }), 400
+        
+        # Verify buddy exists and belongs to user
+        buddy_service = get_buddy_service()
+        buddy = buddy_service.get_buddy(buddy_id, current_user.id)
+        
+        if not buddy:
+            return jsonify({
+                'success': False,
+                'error': 'Buddy not found'
+            }), 404
+        
+        # Get the current prompt from the buddy in the database
+        current_prompt = buddy.initial_prompt
+        
+        # Use the prompt crafter to improve the prompt
+        try:
+            prompt_crafter = get_multi_provider_prompt_crafter()
+            
+            # Get the default provider from config
+            default_provider_name = current_app.config.get('DEFAULT_PROMPT_PROVIDER', 'openai')
+            default_provider = prompt_crafter.providers.get(default_provider_name)
+            
+            if not default_provider:
+                # Error out if default provider is not available
+                error_msg = f"Default provider '{default_provider_name}' is not available. Please check your configuration and ensure the provider is properly set up."
+                current_app.logger.error(error_msg)
+                return jsonify({
+                    'success': False,
+                    'error': error_msg
+                }), 500
+            else:
+                # Use the default provider's improve_prompt method
+                if hasattr(default_provider, 'improve_prompt'):
+                    improved_prompt = default_provider.improve_prompt(current_prompt, tweak_request)
+                else:
+                    # Error out if provider doesn't support improve_prompt
+                    error_msg = f"Provider '{default_provider_name}' doesn't support prompt improvement. Please configure a provider that supports this feature."
+                    current_app.logger.error(error_msg)
+                    return jsonify({
+                        'success': False,
+                        'error': error_msg
+                    }), 500
+            
+            return jsonify({
+                'success': True,
+                'improved_prompt': improved_prompt
+            })
+            
+        except Exception as e:
+            error_msg = f"Error using prompt crafter: {str(e)}"
+            current_app.logger.error(error_msg)
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+        
+    except Exception as e:
+        current_app.logger.error(f"Error tweaking buddy prompt: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to generate improved prompt'
+        }), 500
+
+ 

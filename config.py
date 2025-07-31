@@ -29,6 +29,9 @@ class Config:
     RATELIMIT_STORAGE_URL = 'memory://'  # Use memory for development, redis for production
     RATELIMIT_DEFAULT = '100/hour'
     RATELIMIT_HEADERS_ENABLED = True
+    
+    # LLM Provider configuration
+    DEFAULT_PROMPT_PROVIDER = os.environ.get('DEFAULT_PROMPT_PROVIDER', 'openai')
 
 class DevelopmentConfig(Config):
     """Development config."""

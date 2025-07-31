@@ -101,6 +101,15 @@ class PromptGenerationResult(BaseModel):
         extra = "forbid"
 
 
+class PromptImprovementResult(BaseModel):
+    """Complete prompt improvement result using structured output."""
+    improved_prompt: str = Field(description="The improved prompt")
+    improvements_made: List[str] = Field(description="List of specific improvements made to the prompt")
+    
+    class Config:
+        extra = "forbid"
+
+
 class OpenAIProvider(LLMProvider):
     """
     OpenAI LLM provider for intent analysis using structured outputs.
@@ -398,6 +407,77 @@ Generate a descriptive name for this prompt that captures its purpose and scope.
         
         return "\n\n".join(prompt_parts)
     
+    def improve_prompt(self, current_prompt: str, improvement_request: str) -> str:
+        """
+        Improve an existing prompt based on natural language feedback.
+        
+        Args:
+            current_prompt: The existing prompt to improve
+            improvement_request: Natural language description of desired improvements
+            
+        Returns:
+            Improved prompt string
+        """
+        start_time = time.time()
+        
+        # Build the input messages for prompt improvement
+        messages = [
+            {"role": "system", "content": self._get_improvement_system_prompt()},
+            {"role": "user", "content": self._build_improvement_prompt(current_prompt, improvement_request)}
+        ]
+        
+        # Use structured output parsing for improvement
+        response = self.client.responses.parse(
+            model=self.model,
+            input=messages,
+            text_format=PromptImprovementResult,
+        )
+        
+        result = response.output_parsed
+        
+        # Convert structured result to improved prompt string
+        improved_prompt = self._build_improved_prompt(result)
+        
+        processing_time = int((time.time() - start_time) * 1000)
+        print(f"✅ OpenAI provider improved prompt in {processing_time}ms")
+        
+        return improved_prompt
+    
+    def _get_improvement_system_prompt(self) -> str:
+        """Get the system prompt for prompt improvement."""
+        return """You are an expert prompt engineer specializing in improving existing prompts. Your task is to enhance prompts based on user feedback while maintaining their core purpose and structure.
+
+When improving prompts:
+- Preserve the original intent and purpose
+- Incorporate the requested improvements naturally
+- Maintain clarity and effectiveness
+- Keep the same general structure unless the improvement requires changes
+- Ensure the improved prompt is more effective than the original
+
+Analyze the current prompt and the improvement request carefully to create a better version."""
+    
+    def _build_improvement_prompt(self, current_prompt: str, improvement_request: str) -> str:
+        """Build the prompt for prompt improvement."""
+        return f"""
+Current Prompt:
+{current_prompt}
+
+Improvement Request:
+{improvement_request}
+
+"""
+    
+    def _build_improved_prompt(self, result: 'PromptImprovementResult') -> str:
+        """Convert structured PromptImprovementResult into an improved prompt string."""
+        prompt_parts = []
+
+        if result.improved_prompt:
+            prompt_parts.append(f"{result.improved_prompt}")
+        
+   
+         
+        return "\n\n".join(prompt_parts)
+    
     
 
 
@@ -572,8 +652,59 @@ Return only the final prompt without any numbering, section headers, or multiple
         
         return prompt, prompt_name
     
-    
+    def improve_prompt(self, current_prompt: str, improvement_request: str) -> str:
+        """
+        Improve an existing prompt based on natural language feedback using Claude.
+        
+        Args:
+            current_prompt: The existing prompt to improve
+            improvement_request: Natural language description of desired improvements
+            
+        Returns:
+            Improved prompt string
+        """
+        start_time = time.time()
+        
+        system_prompt = """You are an expert prompt engineer specializing in improving existing prompts. Your task is to enhance prompts based on user feedback while maintaining their core purpose and structure.
 
+When improving prompts:
+- Preserve the original intent and purpose
+- Incorporate the requested improvements naturally
+- Maintain clarity and effectiveness
+- Keep the same general structure unless the improvement requires changes
+- Ensure the improved prompt is more effective than the original
 
+Analyze the current prompt and the improvement request carefully to create a better version.
 
+Return only the improved prompt without any explanations or meta-commentary."""
+        
+        user_prompt = f"""Please improve the following prompt based on the user's request.
 
+Current Prompt:
+{current_prompt}
+
+Improvement Request:
+{improvement_request}
+
+Please provide an improved version that addresses the user's request while maintaining the prompt's core purpose and effectiveness."""
+
+        # Call Claude API
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=2000,
+            system=system_prompt,
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_prompt
+                }
+            ]
+        )
+        
+        # Extract the improved prompt from Claude's response
+        improved_prompt = response.content[0].text.strip()
+        
+        processing_time = int((time.time() - start_time) * 1000)
+        print(f"✅ Anthropic provider improved prompt in {processing_time}ms")
+        
+        return improved_prompt

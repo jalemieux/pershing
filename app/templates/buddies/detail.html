@@ -78,10 +78,58 @@
                             </div>
                         </div>
                         <div id="prompt-edit" class="hidden">
-                            <textarea id="prompt-input" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="8" placeholder="Enter the initial prompt for your buddy">{{ buddy.initial_prompt }}</textarea>
+                            <textarea id="prompt-input" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="8" placeholder="Enter the initial prompt for your buddy" data-initial-prompt="{{ buddy.initial_prompt|tojson|safe }}"></textarea>
                             <div class="mt-3 flex space-x-2">
                                 <button onclick="savePrompt()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save</button>
                                 <button onclick="cancelEditPrompt()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Prompt Tweaking Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">AI Prompt Tweaking</h3>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-blue-800 mb-3">
+                            Describe how you'd like to modify your buddy's prompt in natural language. AI will help you improve it!
+                        </p>
+                        <div id="tweak-container">
+                            <div id="tweak-input-section">
+                                <textarea id="tweak-input" class="w-full p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="4" placeholder="e.g., 'Make my buddy more friendly and encouraging', 'Add expertise in Python programming', 'Make responses shorter and more concise'"></textarea>
+                                <div class="mt-3 flex space-x-2">
+                                    <button onclick="generateTweakedPrompt()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Generate Improved Prompt
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="tweak-result" class="hidden mt-4">
+                                <div class="bg-white border border-gray-200 rounded-lg p-4">
+                                    <h4 class="text-sm font-medium text-gray-900 mb-2">Suggested Improvement:</h4>
+                                    <div id="tweaked-prompt-display" class="bg-gray-50 rounded-lg p-3 mb-3">
+                                        <p class="text-gray-700 whitespace-pre-wrap text-sm"></p>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button onclick="applyTweakedPrompt()" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm flex items-center" title="Apply Changes">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </button>
+                                        <button onclick="regenerateTweakedPrompt()" class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center" title="Regenerate">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </button>
+                                        <button onclick="cancelTweakedPrompt()" class="px-3 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 text-sm flex items-center" title="Cancel">
+                                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -151,6 +199,14 @@
 </div>
 
 <script>
+// Initialize prompt input with initial value
+document.addEventListener('DOMContentLoaded', function() {
+    const promptInput = document.getElementById('prompt-input');
+    if (promptInput) {
+        promptInput.value = JSON.parse(promptInput.getAttribute('data-initial-prompt'));
+    }
+});
+
 // Description editing functions
 function startEditDescription() {
     document.getElementById('description-display').classList.add('hidden');
@@ -239,7 +295,113 @@ function savePrompt() {
 function cancelEditPrompt() {
     document.getElementById('prompt-display').classList.remove('hidden');
     document.getElementById('prompt-edit').classList.add('hidden');
-    document.getElementById('prompt-input').value = '{{ buddy.initial_prompt }}';
+    const promptInput = document.getElementById('prompt-input');
+    promptInput.value = JSON.parse(promptInput.getAttribute('data-initial-prompt'));
+}
+
+// AI Prompt Tweaking functions
+function generateTweakedPrompt() {
+    const tweakInput = document.getElementById('tweak-input').value.trim();
+    if (!tweakInput) {
+        showError('Please describe how you want to modify the prompt');
+        return;
+    }
+
+    // Show loading state
+    const generateButton = document.querySelector('button[onclick="generateTweakedPrompt()"]');
+    const originalText = generateButton.innerHTML;
+    generateButton.innerHTML = `
+        <svg class="animate-spin w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Generating...
+    `;
+    generateButton.disabled = true;
+
+    fetch('/api/buddies/{{ buddy.id }}/tweak-prompt', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            tweak_request: tweakInput
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Restore button
+        generateButton.innerHTML = originalText;
+        generateButton.disabled = false;
+
+        if (data.success) {
+            document.getElementById('tweaked-prompt-display').querySelector('p').textContent = data.improved_prompt;
+            document.getElementById('tweak-result').classList.remove('hidden');
+            document.getElementById('tweak-input-section').classList.add('hidden');
+        } else {
+            showError('Failed to generate improved prompt: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error generating tweaked prompt:', error);
+        generateButton.innerHTML = originalText;
+        generateButton.disabled = false;
+        showError('Failed to generate improved prompt');
+    });
+}
+
+function applyTweakedPrompt() {
+    const improvedPrompt = document.getElementById('tweaked-prompt-display').querySelector('p').textContent;
+    
+    fetch('/api/buddies/{{ buddy.id }}', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            initial_prompt: improvedPrompt
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the displayed prompt
+            document.getElementById('prompt-display').innerHTML = `
+                <p class="text-gray-700 whitespace-pre-wrap">${improvedPrompt}</p>
+                <div class="mt-2 text-xs text-gray-500 flex items-center">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                    </svg>
+                    Click to edit
+                </div>
+            `;
+            
+            // Reset the tweak interface
+            cancelTweakedPrompt();
+            showSuccess('Prompt updated successfully with AI improvements!');
+        } else {
+            showError('Failed to apply changes: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error applying tweaked prompt:', error);
+        showError('Failed to apply changes');
+    });
+}
+
+function regenerateTweakedPrompt() {
+    // Hide the result and show input again
+    document.getElementById('tweak-result').classList.add('hidden');
+    document.getElementById('tweak-input-section').classList.remove('hidden');
+    // Trigger generation again
+    generateTweakedPrompt();
+}
+
+function cancelTweakedPrompt() {
+    // Reset the interface
+    document.getElementById('tweak-result').classList.add('hidden');
+    document.getElementById('tweak-input-section').classList.remove('hidden');
+    document.getElementById('tweak-input').value = '';
 }
 
 // Delete buddy function
