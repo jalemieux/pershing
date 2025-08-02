@@ -7,6 +7,7 @@ from flask import current_app
 from app.database import db
 from app.models import Conversation, Message, User
 from app.chat_llm_providers import get_chat_llm_provider
+from app.context_window_manager import get_context_window_manager
 import base64
 from werkzeug.utils import secure_filename
 
@@ -15,6 +16,7 @@ class ChatService:
     
     def __init__(self):
         self.llm_provider = get_chat_llm_provider()
+        self.context_manager = get_context_window_manager()
         self.upload_folder = os.path.join(current_app.root_path, 'uploads', 'chat')
         os.makedirs(self.upload_folder, exist_ok=True)
     
@@ -112,8 +114,8 @@ class ChatService:
                 file_size=file_size
             )
         
-        # Get conversation context
-        context_messages = self._get_conversation_context(conversation_id)
+        # Get conversation context using the context window manager
+        context_messages = self.context_manager.get_context(conversation_id, strategy="all")
         
         # Generate AI response
         ai_response = self._generate_ai_response(context_messages, file_path, conversation_id)
@@ -193,20 +195,7 @@ class ChatService:
             current_app.logger.error(f"Error handling file upload: {str(e)}")
             raise ValueError("Failed to process file upload")
     
-    def _get_conversation_context(self, conversation_id: int, max_messages: int = 20) -> List[Dict]:
-        """Get conversation context for AI processing."""
-        messages = Message.query.filter_by(conversation_id=conversation_id).order_by(Message.created_at.asc()).limit(max_messages).all()
-        
-        context = []
-        for msg in messages:
-            context.append({
-                'role': msg.role,
-                'content': msg.content,
-                'content_type': msg.content_type,
-                'file_path': msg.file_path if msg.is_file_message() else None
-            })
-        
-        return context
+
     
     def _generate_ai_response(self, context_messages: List[Dict], file_path: Optional[str] = None, conversation_id: int = None) -> Dict:
         """Generate AI response using the configured LLM provider."""
