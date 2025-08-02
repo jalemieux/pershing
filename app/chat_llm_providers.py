@@ -6,6 +6,7 @@ from typing import List, Dict, Optional
 from flask import current_app
 import openai
 import anthropic
+from agents import WebSearchTool
 
 
 class ChatLLMProvider(ABC):
@@ -70,7 +71,7 @@ class ChatOpenAIProvider(ChatLLMProvider):
                 model=self.model,
                 messages=openai_messages,
                 max_tokens=1000,
-                temperature=0.7
+                temperature=0.7, 
             )
             
             return {

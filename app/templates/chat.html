@@ -10,25 +10,25 @@
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-gray-50 flex flex-col">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 flex flex-col">
         <!-- Header -->
-        <div class="mb-8">
+        <div class="py-6">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">AI Chat</h1>
                 <p class="mt-2 text-gray-600">Chat with our AI assistant for intelligent conversations and assistance</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-8 flex-1">
             <!-- Left Column: Conversations Sidebar -->
             <div class="xl:col-span-1">
-                <div class="bg-white rounded-lg shadow">
+                <div class="bg-white rounded-lg shadow h-full flex flex-col">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <h3 class="text-lg font-medium text-gray-900">Conversations</h3>
                         <p class="mt-1 text-sm text-gray-500">Your chat history and conversations</p>
                     </div>
-                    <div class="p-6">
+                    <div class="p-6 flex-1 flex flex-col">
                         <!-- New Chat Button -->
                         <button onclick="createNewConversation()" class="w-full mb-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -38,7 +38,7 @@
                         </button>
                         
                         <!-- Conversations List -->
-                        <div id="conversationsList" class="space-y-2">
+                        <div id="conversationsList" class="flex-1 overflow-y-auto space-y-2">
                             <div class="text-center py-8">
                                 <svg class="animate-spin mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -53,7 +53,7 @@
 
             <!-- Right Column: Chat Interface -->
             <div class="xl:col-span-3">
-                <div class="bg-white rounded-lg shadow">
+                <div class="bg-white rounded-lg shadow h-full flex flex-col">
                     <div class="px-6 py-4 border-b border-gray-200">
                         <div class="flex justify-between items-center">
                             <div>
@@ -77,7 +77,7 @@
                         </div>
                     </div>
                     
-                    <div class="flex flex-col h-96">
+                    <div class="flex flex-col flex-1 min-h-0">
                         <!-- Messages Container -->
                         <div class="flex-1 overflow-y-auto p-6" id="messagesContainer">
                             <div class="text-center py-12">
@@ -85,13 +85,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
                                 </svg>
                                 <h3 class="mt-2 text-sm font-medium text-gray-900">Welcome to AI Chat!</h3>
-                                <p class="mt-1 text-sm text-gray-500">Start a new conversation to begin chatting with your AI assistant.</p>
-                                <button onclick="createNewConversation()" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Start New Chat
-                                </button>
+                                <p class="mt-1 text-sm text-gray-500">Type a message below to start chatting with your AI assistant.</p>
                             </div>
                         </div>
                         
@@ -122,11 +116,10 @@
                                         ></textarea>
                                     </div>
                                     <div class="flex flex-col space-y-2">
-                                        <label for="fileInput" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer">
-                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <label for="fileInput" class="inline-flex items-center justify-center w-10 h-10 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer" title="Attach file">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                                             </svg>
-                                            File
                                         </label>
                                         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
                                         <!-- File selection indicator -->
@@ -143,11 +136,10 @@
                                                 </button>
                                             </div>
                                         </div>
-                                        <button type="submit" id="sendBtn" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <button type="submit" id="sendBtn" class="inline-flex items-center justify-center w-10 h-10 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" disabled title="Send message">
+                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
                                             </svg>
-                                            Send
                                         </button>
                                     </div>
                                 </div>
@@ -562,7 +554,40 @@ async function sendMessage() {
     const messageInput = document.getElementById('messageInput');
     const message = messageInput.value.trim();
     
-    if (!message || !currentConversationId || isTyping) return;
+    if (!message || isTyping) return;
+    
+    // If no conversation exists, create one first
+    if (!currentConversationId) {
+        try {
+            const response = await fetch('/api/chat/conversations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: 'New Conversation',
+                    type: 'text'
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                currentConversationId = data.conversation.id;
+                conversations.unshift(data.conversation);
+                renderConversations();
+                // Clear the welcome message
+                document.getElementById('messagesContainer').innerHTML = '';
+            } else {
+                showError('Failed to create conversation');
+                return;
+            }
+        } catch (error) {
+            console.error('Error creating conversation:', error);
+            showError('Failed to create conversation');
+            return;
+        }
+    }
     
     // Clear input
     messageInput.value = '';

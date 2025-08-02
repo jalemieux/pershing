@@ -3,9 +3,9 @@
 {% block title %}Chat with {{ buddy.name }} - {{ user.email }}{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- Mobile Header -->
-    <div class="bg-white border-b border-gray-200 px-4 py-3">
+    <div class="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <a href="/buddies" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700">
@@ -27,9 +27,9 @@
     </div>
 
     <!-- Main Content -->
-    <div class="flex flex-col h-screen">
+    <div class="flex flex-col flex-1 min-h-0">
         <!-- Chat Area -->
-        <div class="flex-1 flex flex-col">
+        <div class="flex-1 flex flex-col min-h-0">
             <!-- Messages Container -->
             <div class="flex-1 overflow-y-auto p-4" id="messagesContainer">
                 <div class="text-center py-12">
@@ -39,7 +39,7 @@
                         </svg>
                     </div>
                     <h3 class="text-lg font-medium text-gray-900">Welcome to {{ buddy.name }}!</h3>
-                    <p class="mt-1 text-sm text-gray-500">Start a new conversation to begin chatting with your AI companion.</p>
+                    <p class="mt-1 text-sm text-gray-500">Type a message below to start chatting with your AI companion.</p>
                 </div>
             </div>
             
@@ -57,7 +57,7 @@
         </div>
         
         <!-- Input Area -->
-        <div class="bg-white border-t border-gray-200 p-4">
+        <div class="bg-white border-t border-gray-200 p-4 flex-shrink-0">
             <form id="messageForm" class="space-y-3">
                 <!-- File Upload Indicator -->
                 <div id="fileIndicator" class="hidden">
@@ -87,13 +87,13 @@
                         ></textarea>
                     </div>
                     <div class="flex flex-col space-y-2">
-                        <label for="fileInput" class="inline-flex items-center justify-center w-12 h-12 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer">
+                        <label for="fileInput" class="inline-flex items-center justify-center w-12 h-12 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer" title="Attach file">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
                             </svg>
                         </label>
                         <input type="file" id="fileInput" class="hidden" onchange="handleFileSelect(event)">
-                        <button type="submit" id="sendBtn" class="inline-flex items-center justify-center w-12 h-12 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" id="sendBtn" class="inline-flex items-center justify-center w-12 h-12 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed" title="Send message">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"/>
                             </svg>
@@ -225,30 +225,8 @@ async function sendMessage() {
     
     // If no conversation is active, create one first
     if (!currentConversationId) {
-        try {
-            const response = await fetch(`/api/buddies/${buddyId}/conversations`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: `Chat with ${buddyName}`
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                currentConversationId = data.conversation.id;
-                // Clear the welcome message
-                document.getElementById('messagesContainer').innerHTML = '';
-            } else {
-                showError('Failed to create conversation');
-                return;
-            }
-        } catch (error) {
-            console.error('Error creating conversation:', error);
-            showError('Failed to create conversation');
+        const conversation = await createNewConversation();
+        if (!conversation) {
             return;
         }
     }
@@ -467,6 +445,36 @@ function showTypingIndicator() {
 function hideTypingIndicator() {
     isTyping = false;
     document.getElementById('typingIndicator').style.display = 'none';
+}
+
+async function createNewConversation() {
+    try {
+        const response = await fetch(`/api/buddies/${buddyId}/conversations`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: `Chat with ${buddyName}`
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentConversationId = data.conversation.id;
+            // Clear the welcome message
+            document.getElementById('messagesContainer').innerHTML = '';
+            return data.conversation;
+        } else {
+            showError('Failed to create conversation');
+            return null;
+        }
+    } catch (error) {
+        console.error('Error creating conversation:', error);
+        showError('Failed to create conversation');
+        return null;
+    }
 }
 
 function showError(message) {
