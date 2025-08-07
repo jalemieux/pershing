@@ -83,7 +83,7 @@ The provider uses a temperature of 0.7 for balanced creativity and consistency. 
 response = self.client.chat.completions.create(
     model=self.model,
     messages=messages,
-    max_tokens=1000,
+    #max_tokens=1000,
     temperature=0.7  # Adjust this value (0.0-1.0)
 )
 ```
