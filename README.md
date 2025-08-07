@@ -31,7 +31,9 @@ python create_admin.py
 This creates an admin user with:
 - Email: `admin@example.com`
 - Username: `admin`
-- Password: `admin123`
+- Password: A secure randomly generated password (displayed when the script runs)
+
+**Important**: The script generates a cryptographically secure password each time it runs. Make sure to save the generated password securely as it won't be stored in the script.
 
 ### Creating Regular Users
 
@@ -103,7 +105,7 @@ python app.py
 ```
 
 2. Register a new account at `/register` or use the test accounts:
-   - **Admin**: `admin@example.com` / `admin123`
+   - **Admin**: `admin@example.com` / [generated password from `create_admin.py`]
    - **Regular User**: `user@example.com` / `user123`
 
 3. Login at `/login`
