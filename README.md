@@ -1,52 +1,41 @@
 # Pershing - LLM Tools Portal
 
-A Flask-based portal that provides authenticated users access to various LLM-based tools and services.
+A Flask-based portal that provides access to various LLM-based tools and services.
 
 ## Features
 
-- User authentication and registration
-- Secure login system with session management
-- Protected routes for authenticated users
-- **Admin-only dashboard access**
-- **Role-based access control**
-- Ready for LLM tool integration
+- **Intent Analysis**: Analyze user messages to understand their intent, extract entities, and determine the best response
+- **Prompt Crafting**: Transform your ideas into effective prompts with AI assistance and generate multiple prompt variations
+- **AI Chat**: Chat with AI assistants, upload files for analysis, and have intelligent conversations
+- **Buddies**: Create and chat with custom AI assistants. Each buddy has its own personality, tools, and memory
 
-## Admin Functionality
+## User Management
 
-The application now includes role-based access control:
+### Authentication Flow
+New users or those with expired sessions will be redirected to a login flow that validates their email.
 
-- **Admin Users**: Have access to the dashboard and all administrative features
-- **Regular Users**: Have access to basic features but cannot access the dashboard
-- Dashboard is hidden from non-admin users in the navigation
-- Admin routes are protected with `@admin_required` decorator
 
-### Creating Admin Users
 
-Use the provided script to create admin users:
+### Assigning Admin Role
+
+To assign admin privileges to an existing user:
 
 ```bash
-python create_admin.py
+python assign_admin.py <user_email>
 ```
 
-This creates an admin user with:
-- Email: `admin@example.com`
-- Username: `admin`
-- Password: A secure randomly generated password (displayed when the script runs)
-
-**Important**: The script generates a cryptographically secure password each time it runs. Make sure to save the generated password securely as it won't be stored in the script.
-
-### Creating Regular Users
-
-Use the provided script to create regular users:
-
+Example:
 ```bash
-python create_user.py
+python assign_admin.py user@example.com
 ```
 
-This creates a regular user with:
-- Email: `user@example.com`
-- Username: `user`
-- Password: `user123`
+This will:
+- Find the user by email address
+- Assign admin privileges to that user
+- Show confirmation of the change
+- If the user doesn't exist, it will list all available users
+
+
 
 ## Setup
 
@@ -76,25 +65,13 @@ pip install -r requirements.txt
   export FLASK_ENV=production  # For production
   ```
 
-4. Set up PostgreSQL:
-- Make sure PostgreSQL is installed and running
-- Create databases for each environment:
-  ```bash
-  createdb flask_app_dev      # For development
-  createdb flask_app_test     # For testing
-  createdb flask_app_prod     # For production
-  ```
-- Update the DATABASE_URL in each .env file if needed
+4. Set up the database:
+- Create a PostgreSQL database
+- Run the migration scripts in `migrations/` to create the required tables
 
-5. Initialize the database:
+6. Create admin user (optional):
 ```bash
-python app.py
-```
-
-6. Create test users (optional):
-```bash
-python create_admin.py  # Creates admin user
-python create_user.py   # Creates regular user
+python assign_admin.py <user_email>
 ```
 
 ## Usage
@@ -104,43 +81,8 @@ python create_user.py   # Creates regular user
 python app.py
 ```
 
-2. Register a new account at `/register` or use the test accounts:
-   - **Admin**: `admin@example.com` / [generated password from `create_admin.py`]
-   - **Regular User**: `user@example.com` / `user123`
-
-3. Login at `/login`
-
-4. Access the portal:
-   - **Admin users**: Can access dashboard at `/dashboard`
-   - **Regular users**: Can access home page at `/` and other features
-
-## Access Control
-
-### Admin-Only Routes
-- `/dashboard` - User dashboard with session management and statistics
-
-### Protected Routes (All Authenticated Users)
-- `/` - Home page
-- `/intent-collection` - Intent collection feature
-- `/logout` - Logout functionality
-
-### Public Routes
-- `/login` - Login page
-- `/register` - Registration page
 
 ## Development
 
 The application runs in debug mode by default. All routes except login and register require authentication. Admin routes require additional admin privileges.
 
-### Database Schema Updates
-
-The User model has been updated to include:
-- `is_admin` field (Boolean, default: False)
-- Admin status is included in user serialization
-
-### Security Features
-
-- Role-based access control with `@admin_required` decorator
-- Dashboard access restricted to admin users only
-- Navigation automatically hides dashboard link for non-admin users
-- Flash messages for access denied scenarios 
