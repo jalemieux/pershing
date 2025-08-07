@@ -70,7 +70,7 @@ class ChatOpenAIProvider(ChatLLMProvider):
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=openai_messages,
-                max_tokens=1000,
+                #max_tokens=1000,
                 temperature=0.7, 
             )
             
