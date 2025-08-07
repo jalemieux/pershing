@@ -28,21 +28,14 @@ Example:
 ```bash
 python assign_admin.py user@example.com
 ```
-
-This will:
-- Find the user by email address
-- Assign admin privileges to that user
-- Show confirmation of the change
-- If the user doesn't exist, it will list all available users
-
-
+This will grant this user access to the admin dashboard.
 
 ## Setup
 
 1. Create a virtual environment and activate it:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+python -m venv .venv
+source .venv/bin/activate  # On Windows, use `venv\Scripts\activate`
 ```
 
 2. Install dependencies:
@@ -51,17 +44,15 @@ pip install -r requirements.txt
 ```
 
 3. Set up environment configuration:
-- Copy `.env.example` to create environment-specific files:
+- Copy `env.development.example` to create environment-specific files:
   ```bash
-  cp .env.example .env.development  # For development
-  cp .env.example .env.testing      # For testing
-  cp .env.example .env.production   # For production
+  cp env.development.example env.development  # For development
+  cp env.production.example env.production   # For production
   ```
 - Edit each file with appropriate values for that environment
 - Set FLASK_ENV to control which configuration is loaded:
   ```bash
   export FLASK_ENV=development  # For development (default)
-  export FLASK_ENV=testing     # For testing
   export FLASK_ENV=production  # For production
   ```
 
@@ -69,14 +60,8 @@ pip install -r requirements.txt
 - Create a PostgreSQL database
 - Run the migration scripts in `migrations/` to create the required tables
 
-6. Create admin user (optional):
-```bash
-python assign_admin.py <user_email>
-```
 
-## Usage
-
-1. Start the application:
+5. Start the application:
 ```bash
 python app.py
 ```
