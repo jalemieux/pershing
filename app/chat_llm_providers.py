@@ -4,9 +4,9 @@ import base64
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
 from flask import current_app
-import openai
 import anthropic
 from agents import WebSearchTool
+from .openai_client import get_openai_client
 
 
 class ChatLLMProvider(ABC):
@@ -21,70 +21,21 @@ class ChatOpenAIProvider(ChatLLMProvider):
     """OpenAI provider implementation for chat."""
     
     def __init__(self, api_key: str, model: str = "gpt-4o"):
-        self.client = openai.OpenAI(api_key=api_key)
+        self.api_key = api_key
         self.model = model
+        # Use the centralized OpenAI client
+        self.client = get_openai_client(api_key=api_key, model=model)
     
     def generate_response(self, messages: List[Dict], file_path: Optional[str] = None) -> Dict:
         """Generate response using OpenAI API for chat."""
         try:
-            # Prepare messages for OpenAI
-            openai_messages = []
-            for msg in messages:
-                if msg['role'] == 'system':
-                    openai_messages.append({"role": "system", "content": msg['content']})
-                elif msg['role'] == 'user':
-                    if file_path and msg == messages[-1]:  # Last user message with file
-                        # Handle file upload
-                        with open(file_path, 'rb') as f:
-                            file_content = f.read()
-                        
-                        # Determine file type
-                        file_extension = os.path.splitext(file_path)[1].lower()
-                        if file_extension in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                            # Image file
-                            openai_messages.append({
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": msg['content']},
-                                    {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/{file_extension[1:]};base64,{base64.b64encode(file_content).decode()}"
-                                        }
-                                    }
-                                ]
-                            })
-                        else:
-                            # Text file
-                            file_text = file_content.decode('utf-8', errors='ignore')
-                            openai_messages.append({
-                                "role": "user",
-                                "content": f"{msg['content']}\n\nFile content:\n{file_text}"
-                            })
-                    else:
-                        openai_messages.append({"role": "user", "content": msg['content']})
-                elif msg['role'] == 'assistant':
-                    openai_messages.append({"role": "assistant", "content": msg['content']})
-            
-            # Make API call
-            response = self.client.chat.completions.create(
+            # Use the centralized client's chat response method
+            return self.client.generate_chat_response(
+                messages=messages,
+                file_path=file_path,
                 model=self.model,
-                messages=openai_messages,
-                #max_tokens=1000,
-                temperature=0.7, 
+                temperature=0.7
             )
-            
-            return {
-                'content': response.choices[0].message.content,
-                'model': self.model,
-                'provider': 'openai',
-                'tokens_used': response.usage.total_tokens if response.usage else None,
-                'metadata': {
-                    'finish_reason': response.choices[0].finish_reason,
-                    'prompt_tokens': response.usage.prompt_tokens if response.usage else None,
-                    'completion_tokens': response.usage.completion_tokens if response.usage else None
-                }
-            }
             
         except Exception as e:
             current_app.logger.error(f"OpenAI Chat API error: {str(e)}")

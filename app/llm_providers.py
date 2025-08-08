@@ -1,9 +1,9 @@
 from typing import Dict, Any, Optional, List
 import json
 import time
-from openai import OpenAI
 from pydantic import BaseModel, Field
 from .intent_analyzer import LLMProvider
+from .openai_client import get_openai_client
 import re
 
 
@@ -125,8 +125,8 @@ class OpenAIProvider(LLMProvider):
         """
         self.api_key = api_key
         self.model = model
-        # Initialize the OpenAI client
-        self.client = OpenAI(api_key=api_key)
+        # Use the centralized OpenAI client
+        self.client = get_openai_client(api_key=api_key, model=model)
     
     def analyze_intent(self, message: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
@@ -139,70 +139,7 @@ class OpenAIProvider(LLMProvider):
         Returns:
             Dictionary containing the structured intent analysis
         """
-        start_time = time.time()
-        
-        
-        # Build the input messages
-        messages = [
-            {"role": "system", "content": self._get_system_prompt()},
-            {"role": "user", "content": self._build_prompt(message, context)}
-        ]
-        
-
-        response = self.client.responses.parse(
-            model="gpt-4o-2024-08-06",
-            input=messages,
-            text_format=IntentAnalysisResult,
-        )
-
-        result = response.output_parsed
-
-        # Convert to dictionary and add processing time
-        result_dict = result.model_dump(mode="json")
-        processing_time = int((time.time() - start_time) * 1000)
-        result_dict["metadata"]["processing_time_ms"] = processing_time
-        
-        return result_dict
-        
-    
-    
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt for the OpenAI API."""
-        return """You are an expert intent analyzer. Your job is to analyze user messages and extract structured intent information.
-
-Analyze the user intent carefully and provide accurate classifications, entity extractions, and slot filling. Be precise with confidence scores and ensure all required fields are present.
-"""
-# The analysis should include:
-# - Classification: primary intent, domain, category, and confidence
-# - Entities: extracted entities with type, value, normalized_value, and confidence
-# - Slots: required, optional, and missing slots
-# - Context: user preferences, conversation history, and session data
-# - Constraints: any constraints or limitations
-# - Disambiguation: whether disambiguation is needed and alternatives
-# - Fulfillment: action type, service, completion status, and next steps
-# - Metadata: language, sentiment, urgency, and processing info"""
-    
-    def _build_prompt(self, message: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """Build the prompt for the LLM."""
-        prompt = f"""Analyze the following user message and extract structured intent information.
-
-User message: "{message}"
-
-Context: {json.dumps(context) if context else "None"}
-"""
-# Please analyze the intent carefully and provide accurate classifications, entity extractions, and slot filling. Consider the following:
-
-# 1. **Classification**: Determine the primary intent, domain, category, and confidence level
-# 2. **Entities**: Extract relevant entities like destinations, dates, times, locations, people, etc.
-# 3. **Slots**: Identify required and optional slots, and note any missing required information
-# 4. **Context**: Consider user preferences, conversation history, and session data
-# 5. **Fulfillment**: Determine the appropriate action type, service, and next steps
-# 6. **Metadata**: Analyze language, sentiment, and urgency
-
-# Be precise and accurate in your analysis. Use appropriate confidence scores and ensure all required fields are present."""
-        return prompt
-    
-    
+        return self.client.analyze_intent(message, context, self.model)
 
 
 class AnthropicProvider(LLMProvider):
@@ -296,8 +233,8 @@ class OpenAIPromptProvider:
         """
         self.api_key = api_key
         self.model = model
-        # Initialize the OpenAI client
-        self.client = OpenAI(api_key=api_key)
+        # Use the centralized OpenAI client
+        self.client = get_openai_client(api_key=api_key, model=model)
     
     def generate_prompt(self, user_input: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
@@ -310,102 +247,7 @@ class OpenAIPromptProvider:
         Returns:
             Dictionary containing the generated prompts and metadata
         """
-        start_time = time.time()
-        
-        # Build the input messages
-        messages = [
-            {"role": "system", "content": self._get_system_prompt()},
-            {"role": "user", "content": self._build_prompt(user_input, context)}
-        ]
-        
-        # Use structured output parsing
-        response = self.client.responses.parse(
-            model=self.model,
-            input=messages,
-            text_format=PromptGenerationResult,
-        )
-        
-        result = response.output_parsed
-        
-        # Convert structured result to format expected by PromptResult
-        # Create a complete prompt from the structured components
-        complete_prompt = self._build_complete_prompt(result)
-        
-        # Convert to dictionary format expected by PromptResult
-        result_dict = {
-            "prompts": [complete_prompt],
-            "prompt_names": [result.name],
-            "prompt_types": ["structured_complete"],
-            "metadata": result.metadata.model_dump(mode="json"),
-            "context": context or {}
-        }
-        
-        # Add processing time
-        processing_time = int((time.time() - start_time) * 1000)
-        result_dict["metadata"]["processing_time_ms"] = processing_time
-        
-        return result_dict
-            
-       
-       
-    
-    def _get_system_prompt(self) -> str:
-        """Get the system prompt for prompt generation."""
-        return """
-        You are an expert prompt engineer. Your task is to create clear, effective prompt for AI systems base don the user input. Write a well-structured prompt that will get the best results.
-Follow these principles:
-
-Be specific and detailed about what you want
-Provide context and background information
-Include examples when helpful
-Specify the desired format, length, and style
-Use clear, direct language
-Break complex tasks into steps
-Include any constraints or requirements
-
-Structure your prompt like this:
-
-Name: A descriptive, concise name for this prompt (max 50 characters)
-Role/Context: Define what role the AI should take
-Task: Clearly state what needs to be done
-Requirements: List specific criteria or constraints
-Format: Specify how the output should be structured
-Examples (if needed): Show what good output looks like
-"""    
-    def _build_prompt(self, user_input: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """Build the user prompt for the LLM."""
-        prompt = f"""Please write a prompt for: "{user_input}"
-
-Generate a descriptive name for this prompt that captures its purpose and scope."""
-        return prompt
-    
-    def _build_complete_prompt(self, result: PromptGenerationResult) -> str:
-        """Convert structured PromptGenerationResult into a complete prompt string."""
-        prompt_parts = []
-        
-        # Add role/context
-        if result.role_context:
-            prompt_parts.append(f"Role/Context: {result.role_context}")
-        
-        # Add task
-        if result.task:
-            prompt_parts.append(f"Task: {result.task}")
-        
-        # Add requirements
-        if result.requirements:
-            requirements_text = "\n".join([f"- {req}" for req in result.requirements])
-            prompt_parts.append(f"Requirements:\n{requirements_text}")
-        
-        # Add format
-        if result.format:
-            prompt_parts.append(f"Format: {result.format}")
-        
-        # Add examples
-        if result.examples:
-            examples_text = "\n".join([f"- {example}" for example in result.examples])
-            prompt_parts.append(f"Examples:\n{examples_text}")
-        
-        return "\n\n".join(prompt_parts)
+        return self.client.generate_prompt(user_input, context, self.model)
     
     def improve_prompt(self, current_prompt: str, improvement_request: str) -> str:
         """
@@ -418,67 +260,7 @@ Generate a descriptive name for this prompt that captures its purpose and scope.
         Returns:
             Improved prompt string
         """
-        start_time = time.time()
-        
-        # Build the input messages for prompt improvement
-        messages = [
-            {"role": "system", "content": self._get_improvement_system_prompt()},
-            {"role": "user", "content": self._build_improvement_prompt(current_prompt, improvement_request)}
-        ]
-        
-        # Use structured output parsing for improvement
-        response = self.client.responses.parse(
-            model=self.model,
-            input=messages,
-            text_format=PromptImprovementResult,
-        )
-        
-        result = response.output_parsed
-        
-        # Convert structured result to improved prompt string
-        improved_prompt = self._build_improved_prompt(result)
-        
-        processing_time = int((time.time() - start_time) * 1000)
-        print(f"✅ OpenAI provider improved prompt in {processing_time}ms")
-        
-        return improved_prompt
-    
-    def _get_improvement_system_prompt(self) -> str:
-        """Get the system prompt for prompt improvement."""
-        return """You are an expert prompt engineer specializing in improving existing prompts. Your task is to enhance prompts based on user feedback while maintaining their core purpose and structure.
-
-When improving prompts:
-- Preserve the original intent and purpose
-- Incorporate the requested improvements naturally
-- Maintain clarity and effectiveness
-- Keep the same general structure unless the improvement requires changes
-- Ensure the improved prompt is more effective than the original
-
-Analyze the current prompt and the improvement request carefully to create a better version."""
-    
-    def _build_improvement_prompt(self, current_prompt: str, improvement_request: str) -> str:
-        """Build the prompt for prompt improvement."""
-        return f"""
-Current Prompt:
-{current_prompt}
-
-Improvement Request:
-{improvement_request}
-
-"""
-    
-    def _build_improved_prompt(self, result: 'PromptImprovementResult') -> str:
-        """Convert structured PromptImprovementResult into an improved prompt string."""
-        prompt_parts = []
-
-        if result.improved_prompt:
-            prompt_parts.append(f"{result.improved_prompt}")
-        
-   
-         
-        return "\n\n".join(prompt_parts)
-    
-    
+        return self.client.improve_prompt(current_prompt, improvement_request, self.model)
 
 
 class AnthropicPromptProvider:
@@ -540,8 +322,8 @@ Return only the final prompt without any numbering, section headers, or multiple
         # Call Claude API
         response = self.client.messages.create(
             model=self.model,
-            #max_tokens=2000,
             system=system_prompt,
+            max_tokens=2000,
             messages=[
                 {
                     "role": "user",
@@ -691,7 +473,6 @@ Please provide an improved version that addresses the user's request while maint
         # Call Claude API
         response = self.client.messages.create(
             model=self.model,
-            max_tokens=2000,
             system=system_prompt,
             messages=[
                 {
